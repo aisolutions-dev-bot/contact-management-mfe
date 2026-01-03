@@ -13,8 +13,14 @@ RUN pnpm install --frozen-lockfile
 # Copy rest of the source code
 COPY . .
 
-# Build Angular app for production
-RUN SHELL_URL=https://ai-solutions-shell-v2-production.up.railway.app pnpm build --configuration production
+ARG GIT_BRANCH=$GIT_BRANCH
+
+# Build Angular app for or staging accordingly
+RUN if [ "$GIT_BRANCH" = "staging" ]; then \
+    pnpm build --configuration staging; \
+    else \
+    pnpm build --configuration production; \
+    fi
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine
