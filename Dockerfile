@@ -1,7 +1,7 @@
 # Stage 1: Build Angular app
 FROM node:20-alpine AS build
 
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@10.23.0 --activate
 WORKDIR /app
 
 # Copy manifests first for better caching
@@ -17,9 +17,9 @@ ARG GIT_BRANCH=$GIT_BRANCH
 
 # Build Angular app for or staging accordingly
 RUN if [ "$GIT_BRANCH" = "staging" ]; then \
-    pnpm build --configuration staging; \
+    pnpm run build:staging; \
     else \
-    pnpm build --configuration production; \
+    pnpm run build:prod; \
     fi
 
 # Stage 2: Serve with nginx
