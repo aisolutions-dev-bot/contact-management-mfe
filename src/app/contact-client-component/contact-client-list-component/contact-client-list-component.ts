@@ -132,7 +132,7 @@ export class ContactClientListComponent implements OnInit, OnChanges {
     }
 
     navigateToClientEdit(client: ContactClientList | null): void {
-        if(!client) return;
+        if (!client) return;
 
         this.router.navigate(['/contact/client/edit', client.uniqId]);
     }

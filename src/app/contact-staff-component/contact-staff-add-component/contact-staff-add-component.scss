@@ -1,0 +1,18 @@
+.contact-staff-add-wrapper {
+  margin: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-staff-add-wrapper > remote-component {
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.actions {
+  display: flex;
+  // justify-content: space-between;
+  align-items: center;
+  gap: 1rem; // controls the spacing between filter and button
+  margin-bottom: 1rem; // optional
+}

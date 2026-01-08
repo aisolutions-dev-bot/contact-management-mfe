@@ -1,15 +1,16 @@
 import { Component, Inject, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactStaffService } from '../services/contact-staff-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-contact-staff-add',
   standalone: true,
-  imports: [RemoteComponent],
+  imports: [RemoteComponent, ButtonModule, RouterLink],
   templateUrl: './contact-staff-add-component.html',
   styleUrls: ['./contact-staff-add-component.scss'],
 })
@@ -32,6 +33,8 @@ export class ContactStaffAddComponent implements OnInit {
 
     // Dropdown options
     departmentOpts = signal<DropdownOption[]>([]);
+    formTypeOpts = signal<DropdownOption[]>([]);
+    skillSetOpts = signal<DropdownOption[]>([]);
     
     // UI loading states
     uniqId = signal<number | null>(null);
@@ -40,6 +43,9 @@ export class ContactStaffAddComponent implements OnInit {
     
     // Configuration & Environment
     uiMfeUrl = environment.uiMfeUrl;
+
+    // Track previous value for change detection
+    private previousFormType: string = '';
     //#endregion
 
     //#region FORM CONFIGURATION
@@ -60,7 +66,6 @@ export class ContactStaffAddComponent implements OnInit {
             icon: 'pi-user',
             colSpan: 3,
         },
-
         // ========== ROW 2: NRIC ==========
         {
             key: 'nric',
@@ -69,7 +74,6 @@ export class ContactStaffAddComponent implements OnInit {
             icon: 'pi-id-card',
             colSpan: 6,
         },
-
         // ========== ROW 3: Department, Date Join ==========
         {
             key: 'departmentId',
@@ -86,6 +90,24 @@ export class ContactStaffAddComponent implements OnInit {
             icon: 'pi-calendar',
             colSpan: 2,
         },
+        // ========== ROW 4: Form Type ==========
+        {
+            key: 'formType',
+            label: 'Form Type',
+            type: 'select' as const,
+            icon: 'pi-file',
+            colSpan: 6,
+            options: [],
+        },
+        // ========== ROW 5: Skill Set ==========
+        {
+            key: 'skillSet',
+            label: 'Skillset',
+            type: 'select' as const,
+            icon: 'pi-list-check',
+            colSpan: 6,
+            options: [],
+        },
     ];
 
     private formConfigSignal = signal<FormConfig>({
@@ -99,6 +121,8 @@ export class ContactStaffAddComponent implements OnInit {
             nric: '',
             departmentId: '',
             dateJoin: '',
+            formType: '',
+            skillSet: '',
         },
         buttonLabel: 'Create Staff',
     });
@@ -121,7 +145,9 @@ export class ContactStaffAddComponent implements OnInit {
         this.staffService.getDropdownsByTypes(requiredTypes).subscribe({
             next: (data: DropdownResponse) => {
                 this.processDropdownData(data);
-                this.loadStaff();
+                 this.loadFormTypeDropdown().then(() => {
+                    this.loadStaff();
+                });
             },
             error: (err) => {
                 this.messageService.showError('Error', err);
@@ -157,6 +183,8 @@ export class ContactStaffAddComponent implements OnInit {
             nric: '',
             departmentId: '',
             dateJoin: '',
+            formType: '',
+            skillSet: '',
         };
 
         this.formConfigSignal.update(cfg => ({
@@ -172,11 +200,76 @@ export class ContactStaffAddComponent implements OnInit {
     //#region EVENT HANDLERS
     onRemoteOutput(event: Record<string, any>): void {
         if (event['modelChange']) {
+            this.handleModelChange(event['modelChange']);
         }
 
         if (event['formButtonClicked']) {
             this.addStaff(event['formButtonClicked']);
         }
+    }
+
+    private handleModelChange(model: Record<string, any>): void {
+        const currentFormType = model['formType'];
+
+        // If formType changed, reload skillSet options
+        if (currentFormType !== this.previousFormType) {
+            this.previousFormType = currentFormType;
+            this.onFormTypeChange(currentFormType);
+        }
+    }
+
+    //#endregion
+
+    //#region API DATA LOADING METHODS
+
+    private loadFormTypeDropdown(): Promise<void> {
+        return new Promise((resolve) => {
+            this.staffService.getFormTypes().subscribe({
+                next: (data) => {
+                    this.formTypeOpts.set(data);
+                    this.updateFieldOptions('formType', data);
+                    resolve();
+                },
+                error: (err) => {
+                    this.messageService.showError('Error', 'Failed to load Form Types');
+                    resolve();
+                }
+            });
+        });
+    }
+
+    private loadSkillSetDropdown(formType: string): Promise<void> {
+        if (!formType) {
+            this.skillSetOpts.set([]);
+            this.updateFieldOptions('skillSet', []);
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve) => {
+            this.staffService.getSkillSetsByFormType(formType).subscribe({
+                next: (data) => {
+                    this.skillSetOpts.set(data);
+                    this.updateFieldOptions('skillSet', data);
+                    resolve();
+                },
+                error: (err) => {
+                    this.messageService.showError('Error', 'Failed to load Skillset');
+                    resolve();
+                }
+            });
+        });
+    }
+
+    private onFormTypeChange(formType: string): void {
+        if (!formType) {
+            this.skillSetOpts.set([]);
+            this.updateFieldOptions('skillSet', []);
+            this.updateFormModel({ skillSet: '' });
+            return;
+        }
+
+        this.loadSkillSetDropdown(formType);
+        this.updateFormModel({ skillSet: '' });
     }
 
     //#endregion
@@ -253,6 +346,13 @@ export class ContactStaffAddComponent implements OnInit {
             fields: cfg.fields.map(field =>
                 field.key === fieldKey ? { ...field, options } : field
             )
+        }));
+    }
+
+    private updateFormModel(updates: Record<string, any>): void {
+        this.formConfigSignal.update((cfg) => ({
+            ...cfg,
+            model: { ...cfg.model, ...updates },
         }));
     }
 

@@ -9,7 +9,8 @@ declare module '@ai-solutions-ui/form-component' {
     | 'checkbox'
     | 'radio'
     | 'multiselect'
-    | 'password';
+    | 'password'
+    | 'toggle';
 
   /* 1.  generic field that keeps the literal key  */
   export interface FormField<K extends string = string> {

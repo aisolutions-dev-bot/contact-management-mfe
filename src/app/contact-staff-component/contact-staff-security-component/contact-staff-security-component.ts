@@ -1,15 +1,16 @@
-import { Component, Inject, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { FormConfig } from '@ai-solutions-ui/form-component';
-import { RemoteComponent } from '../../components/remote-component';
-import { ContactStaffService } from '../services/contact-staff-service';
+import { Component, Inject, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 import { environment } from '../../../environments/environment';
+import { RemoteComponent } from '../../components/remote-component';
 import { DropdownOption, IAppMessageService } from '../../models/contact';
+import { ContactStaffService } from '../services/contact-staff-service';
 
 @Component({
     selector: 'app-contact-staff-security',
     standalone: true,
-    imports: [RemoteComponent],
+    imports: [RemoteComponent, ButtonModule, RouterLink],
     templateUrl: './contact-staff-security-component.html',
     styleUrls: ['./contact-staff-security-component.scss'],
 })
@@ -49,35 +50,73 @@ export class ContactStaffSecurityComponent implements OnInit {
             type: 'text' as const,
             icon: 'pi-id-card',
             disabledWhen: () => true,
+            colSpan: 6,
+        },
+        {
+            key: 'secGroupAuthority',
+            label: 'User Authority',
+            type: 'text' as const,
+            icon: 'pi-sitemap',
+            colSpan: 6,
         },
         {
             key: 'loginId',
             label: 'Login ID',
             type: 'text' as const,
             icon: 'pi-user',
+            colSpan: 6,
         },
         {
             key: 'password',
             label: 'New Password',
             type: 'password' as const,
             icon: 'pi pi-lock',
+            colSpan: 6,
+            hiddenWhen: () => true,
         },
         {
             key: 'confirmPassword',
             label: 'Confirm Password',
             type: 'password' as const,
             icon: 'pi pi-lock',
-        }
+            colSpan: 6,
+            hiddenWhen: () => true,
+        },
+        {
+            key: 'systemUser',
+            label: 'System User:',
+            type: 'toggle' as const,
+            colSpan: 2,
+        },
+        {
+            key: 'disablePassword',
+            label: 'Disable Password:',
+            type: 'toggle' as const,
+            colSpan: 2,
+        },
+        {
+            key: 'changePassword',
+            label: 'Change Password:',
+            type: 'toggle' as const,
+            colSpan: 2,
+        },
     ];
 
     private formConfigSignal = signal<FormConfig>({
         title: 'Security',  
         fields: this.formFields,
+        layout: 'grid',
+        gridColumns: 6,
         model: {
             staffName: '',
+            secGroupAuthority: '',
             loginId: '',
             password: '',
             confirmPassword: '',
+            systemUser: false,
+            disablePassword: false,
+            changePassword: false,
+
         },
         buttonLabel: 'Save Changes',
     });
@@ -126,7 +165,14 @@ export class ContactStaffSecurityComponent implements OnInit {
     }
 
     private handleStaffLoaded(staff: Record<string, any>): void {
-        this.setFormModel(staff);
+        const formData = {
+            ...staff,
+            systemUser: this.ynToBoolean(staff['systemUser']),           
+            disablePassword: this.bitToBoolean(staff['disablePassword']),
+            changePassword: this.bitToBoolean(staff['changePassword']),   
+        };
+
+        this.setFormModel(formData);
         this.loading.set(false);
     }
 
@@ -178,6 +224,7 @@ export class ContactStaffSecurityComponent implements OnInit {
                 this.messageService.showSuccess('Success', 'Security settings updated successfully!');
                 this.clearPasswordFields();
                 this.saving.set(false);
+                this.loadStaff(id)
             },
             error: (err) => {
                 this.messageService.showError(
@@ -219,12 +266,16 @@ export class ContactStaffSecurityComponent implements OnInit {
 
     private buildPayload(model: Record<string, any>): Record<string, any> {
         const payload: Record<string, any> = {
-            loginId: model['loginId'],
+            ...model,
+            systemUser: model['systemUser'] ? 'Y' : 'N',
+            disablePassword: model['disablePassword'] ? 1 : 0,
+            changePassword: model['changePassword'] ? 1 : 0,
         };
 
-        if (model['password'] && model['password'].trim() !== '') {
-            payload['password'] = model['password'];
-        }
+        // TODO: Add password when feature is ready
+        // if (model['password'] && model['password'].trim() !== '') {
+        //     payload['password'] = model['password'];
+        // }
         return payload;
     }
 
@@ -245,6 +296,17 @@ export class ContactStaffSecurityComponent implements OnInit {
     //#endregion
   
     //#region UTILITY METHODS
+    
+    private ynToBoolean(value: string | null | undefined): boolean {
+        return value === 'Y';
+    }
+
+    private bitToBoolean(value: number | boolean | null | undefined): boolean {
+        if (typeof value === 'boolean') {
+            return value;
+        }
+        return value === 1;
+    }
 
     //#endregion
 

@@ -1,11 +1,12 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   DropdownResponse,
   ContactStaffList,
   ImportStaffRow,
+  DropdownOption,
 } from '../../models/contact';
 
 interface ContactStaffListResponse {
@@ -17,38 +18,50 @@ interface ContactStaffListResponse {
   providedIn: 'root',
 })
 export class ContactStaffService {
-    private apiUrl = environment.apiUrl;
-
-    private dropdownCache$: Observable<DropdownResponse> | null = null;
-
-    constructor(private http: HttpClient) { }
+    private readonly baseUrl = `${environment.apiUrl}/v1/contact-staff`;
+    private readonly apiUrl = environment.apiUrl;
+    private http = inject(HttpClient);
 
     getContactStaff(filter: Record<string, any> = {}): Observable<ContactStaffList[]> {
         const params = new HttpParams({ fromObject: filter as any });
         return this.http.get<ContactStaffList[]>(
-        `${this.apiUrl}/v1/contact-staff/list`,
-        { params },
+            `${this.baseUrl}/list`,
+            { params },
         );
     }
 
     getStaffById(uniqId: number): Observable<ContactStaffList> {
-        return this.http.get<ContactStaffList>(`${this.apiUrl}/v1/contact-staff/${uniqId}`);
+        return this.http.get<ContactStaffList>(
+            `${this.baseUrl}/${uniqId}`
+        );
     }
 
     createStaff(payload: Record<string, any>): Observable<any> {
-        return this.http.post(`${this.apiUrl}/v1/contact-staff/add`, payload)
+        return this.http.post(
+            `${this.baseUrl}/add`, 
+            payload
+        );
     }
 
     importStaff(staffList: ImportStaffRow[]): Observable<any> {
-        return this.http.post<any>(`${this.apiUrl}/v1/contact-staff/import`, staffList);
+        return this.http.post<any>(
+            `${this.baseUrl}/import`, 
+            staffList
+        );
     }
 
     updateStaff(id: number, data: Record<string, any>): Observable<ContactStaffList> {
-        return this.http.put<ContactStaffList>(`${this.apiUrl}/v1/contact-staff/${id}`, data);
+        return this.http.put<ContactStaffList>(
+            `${this.baseUrl}/${id}`, 
+            data
+        );
     }
 
     updateStaffSecurity(id: number, data: Record<string, any>): Observable<any> {
-        return this.http.put(`${this.apiUrl}/v1/contact-staff/security/${id}`, data);
+        return this.http.put(
+            `${this.baseUrl}/security/${id}`, 
+            data
+        );
     }
 
     /**
@@ -64,7 +77,18 @@ export class ContactStaffService {
         );
     }
 
-    clearCache(): void {
-        this.dropdownCache$ = null;
+    getFormTypes(): Observable<DropdownOption[]> {
+        return this.http.get<DropdownOption[]>(
+            `${this.apiUrl}/v1/dropdowns/formtypes`
+        );
+    }
+
+    getSkillSetsByFormType(formType: string): Observable<DropdownOption[]> {
+        // Properly encode the formType to handle special characters
+        const encodedFormType = encodeURIComponent(formType);
+
+        return this.http.get<DropdownOption[]>(
+            `${this.apiUrl}/v1/dropdowns/skillsets?formType=${encodedFormType}`
+        );
     }
 }

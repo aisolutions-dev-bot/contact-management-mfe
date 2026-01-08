@@ -19,7 +19,7 @@ export class ContactTabsRouter implements OnInit, OnDestroy {
     // Need to make the tabs dynamically loaded based on customer's subscription
     // in future
     tabs: Record<string, { label: string; icon?: string }> = {
-        '/contact/dashboard': { label: 'Dashboard' },
+        //'/contact/dashboard': { label: 'Dashboard' },
         '/contact/client': { label: 'Client Master' },
         '/contact/staff': { label: 'Staff Master' },
     };

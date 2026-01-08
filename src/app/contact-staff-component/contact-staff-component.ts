@@ -21,7 +21,7 @@ import { IAppMessageService, ImportStaffRow } from '../models/contact';
         FormsModule,
         RouterLink
     ],
-    providers: [DialogService, MessageService],
+    providers: [DialogService],
     templateUrl: './contact-staff-component.html',
     styleUrl: './contact-staff-component.scss',
 })

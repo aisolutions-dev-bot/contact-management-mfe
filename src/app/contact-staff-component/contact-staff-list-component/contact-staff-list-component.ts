@@ -65,8 +65,8 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
 
         return [
         {
-            label: 'Edit',
-            icon: 'pi pi-fw pi-pen-to-square',
+            label: 'Edit Staff',
+            icon: 'pi pi-fw pi-file-edit',
             command: () => this.navigateToStaffEdit(selected),
         },
         {
@@ -150,13 +150,13 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     }
 
     navigateToStaffEdit(staff: ContactStaffList | null): void {
-        if(!staff) return;
+        if (!staff) return;
 
         this.router.navigate(['/contact/staff/edit', staff.uniqId]);
     }
 
     navigateToSecurity(staff: ContactStaffList | null): void {
-        if(!staff) return;
+        if (!staff) return;
 
         this.router.navigate(['/contact/staff/security', staff.uniqId]);
     }
