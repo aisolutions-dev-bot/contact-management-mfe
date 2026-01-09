@@ -74,7 +74,7 @@ export class ContactStaffEditComponent implements OnInit {
         {
             key: 'telMobile',
             label: 'Mobile No.',
-            type: 'tel' as const,
+            type: 'text' as const,
             icon: 'pi-phone',
             colSpan: 3,
         },

@@ -4,7 +4,6 @@ declare module '@ai-solutions-ui/form-component' {
     | 'text'
     | 'number'
     | 'email'
-    | 'tel'
     | 'date'
     | 'time'
     | 'select'
