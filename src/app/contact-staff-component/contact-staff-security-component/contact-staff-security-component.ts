@@ -224,7 +224,7 @@ export class ContactStaffSecurityComponent implements OnInit {
                 this.messageService.showSuccess('Success', 'Security settings updated successfully!');
                 this.clearPasswordFields();
                 this.saving.set(false);
-                this.loadStaff(id)
+                this.router.navigate(['/contact/staff/']);
             },
             error: (err) => {
                 this.messageService.showError(

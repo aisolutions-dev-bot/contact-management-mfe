@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { RemoteComponent } from '../../components/remote-component';
 import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
 import { ContactStaffService } from '../services/contact-staff-service';
+import { Validators } from '@angular/forms';
 
 @Component({
     selector: 'app-contact-staff-edit',
@@ -16,7 +17,7 @@ import { ContactStaffService } from '../services/contact-staff-service';
 })
 export class ContactStaffEditComponent implements OnInit {
 
-    //#region INJECTED DEPENDECIES
+    //#region INJECTED DEPENDENCIES
     private route = inject(ActivatedRoute);
     private router = inject(Router);
     private staffService = inject(ContactStaffService);
@@ -28,16 +29,10 @@ export class ContactStaffEditComponent implements OnInit {
     //#endregion
 
     //#region SIGNALS - UI STATE MANAGEMENT
-
-    // Data maps for lookups
-    private departmentDataMap = signal<Map<string, string>>(new Map());
-    
-    // Dropdown options
-    departmentOpts = signal<DropdownOption[]>([]);
-    formTypeOpts = signal<DropdownOption[]>([]);
-    skillSetOpts = signal<DropdownOption[]>([]);
     
     // UI loading states
+    externalPatch = signal<Record<string, any> | null>(null);
+    fieldErrors = signal<Record<string, any>>({});
     uniqId = signal<number | null>(null);
     loading = signal<boolean>(false);
     saving = signal<boolean>(false);
@@ -46,19 +41,20 @@ export class ContactStaffEditComponent implements OnInit {
     uiMfeUrl = environment.uiMfeUrl;
 
     // Track previous value for change detection
-    private previousFormType: string = '';
+    private previousFormType = '';
+
     //#endregion
 
     //#region FORM CONFIGURATION
 
     private readonly formFields = [
-        // ========== ROW 1: Staff ID, Staff Name ==========
         {
             key: 'staffId',
             label: 'Staff ID',
             type: 'text' as const,
             icon: 'pi-hashtag',
             colSpan: 3,
+            validators: [Validators.required],
         },
         {
             key: 'staffName',
@@ -66,16 +62,22 @@ export class ContactStaffEditComponent implements OnInit {
             type: 'text' as const,
             icon: 'pi-user',
             colSpan: 3,
+            validators: [Validators.required],
         },
-        // ========== ROW 2: NRIC ==========
         {
             key: 'nric',
             label: 'NRIC',
             type: 'text' as const,
             icon: 'pi-id-card',
-            colSpan: 6,
+            colSpan: 3,
         },
-        // ========== ROW 3: Department, Date Join ==========
+        {
+            key: 'telMobile',
+            label: 'Mobile No.',
+            type: 'tel' as const,
+            icon: 'pi-phone',
+            colSpan: 3,
+        },
         {
             key: 'departmentId',
             label: 'Department',
@@ -91,7 +93,14 @@ export class ContactStaffEditComponent implements OnInit {
             icon: 'pi-calendar',
             colSpan: 2,
         },
-        // ========== ROW 4: Form Type ==========
+        {
+            key: 'emailCompany',
+            label: 'Email',
+            type: 'email' as const,
+            icon: 'pi-envelope',
+            colSpan: 6,
+            validators: [Validators.email],
+        },
         {
             key: 'formType',
             label: 'Form Type',
@@ -100,7 +109,6 @@ export class ContactStaffEditComponent implements OnInit {
             colSpan: 6,
             options: [],
         },
-        // ========== ROW 5: Skill Set ==========
         {
             key: 'skillSet',
             label: 'Skillset',
@@ -116,19 +124,12 @@ export class ContactStaffEditComponent implements OnInit {
         layout: 'grid',  
         gridColumns: 6,   
         fields: this.formFields,
-        model: {
-            staffId: '',
-            staffName: '',
-            nric: '',
-            departmentId: '',
-            dateJoin: '',
-            formType: '',
-            skillSet: '',
-        },
+        model: {},
         buttonLabel: 'Save Changes',
     });
 
     formConfig = this.formConfigSignal.asReadonly();
+
     //#endregion
  
     ngOnInit(): void {
@@ -155,84 +156,78 @@ export class ContactStaffEditComponent implements OnInit {
 
         this.staffService.getDropdownsByTypes(requiredTypes).subscribe({
             next: (data: DropdownResponse) => {
-                this.processDropdownData(data)    
+                this.updateFieldOptions('departmentId', data.departments || []);
                 
                 this.loadFormTypeDropdown().then(() => {
                     this.loadStaff(id);
                 });
             },
             error: (err) => {
-                this.messageService.showError('Error', err);
+                this.messageService.showError('Error', 'Failed to load form data', err);
                 this.loading.set(false);
             }
         });
     }
 
-    private processDropdownData(data: DropdownResponse): void {
-        const departmentMap = new Map<string, string>();
-
-        const departmentOptions = (data.departments || []).map((item: DropdownOption) => {
-            departmentMap.set(item.value, item.label); 
-            return {
-                value: item.value,
-                label: `${item.label}` 
-            };
-        });
-
-        this.departmentDataMap.set(departmentMap);
-
-        this.departmentOpts.set(departmentOptions);
-
-        this.updateFieldOptions('departmentId', this.departmentOpts());
-    }
-
     private loadStaff(id: number): void {
-        this.loading.set(true);
-        
         this.staffService.getStaffById(id).subscribe({
             next: (staff) => {
                 this.handleStaffLoaded(staff);
             },
             error: (err) => {
-                this.messageService.showError(
-                    'Error', 
-                    err.error?.error || err.message || 'Failed to load staff'
-                );
+                this.messageService.showError('Error', 'Failed to load staff data', err);
                 this.loading.set(false);
-                this.router.navigate(['/contact/staff/list']);
+                this.router.navigate(['/contact/staff']);
             }
         });
     }
 
     private handleStaffLoaded(staff: Record<string, any>): void {
         const formattedStaff = this.formatStaffData(staff);
+        
+        // Track formType for change detection
+        this.previousFormType = formattedStaff['formType'] || '';
 
-        // If staff has formType, load skillSet option
+        // If staff has formType, load skillSet options first
         if (formattedStaff['formType']) {
-            this.previousFormType = formattedStaff['formType'];
-            this.loadSkillSetDropdown(formattedStaff['formType']).then(() => {
-                this.setFormModel(formattedStaff);
-                this.loading.set(false);
+            this.loadSkillSetForFormType(formattedStaff['formType']).then(() => {
+                this.initializeFormWithData(formattedStaff);
             });
         } else {
-            this.setFormModel(formattedStaff);
-            this.loading.set(false);
+            this.initializeFormWithData(formattedStaff);
         }
+    }
+
+    private initializeFormWithData(staff: Record<string, any>): void {
+        this.formConfigSignal.update((cfg) => ({
+            ...cfg,
+            title: `Edit Staff: ${staff['staffName'] || ''}`,
+            model: {
+                staffId: staff['staffId'] ?? '',
+                staffName: staff['staffName'] ?? '',
+                nric: staff['nric'] ?? '',
+                telMobile: staff['telMobile']?.trim() ?? '',
+                departmentId: staff['departmentId']?.trim() ?? '',
+                dateJoin: staff['dateJoin'] ?? '',
+                emailCompany: staff['emailCompany']?.trim() ?? '',
+                formType: staff['formType']?.trim() ?? '',
+                skillSet: staff['skillSet']?.trim() ?? '',
+            },
+        }));
+
+        this.loading.set(false);
     }
 
     private formatStaffData(staff: Record<string, any>): Record<string, any> {
         return {
             ...staff,
             dateJoin: this.formatDate(staff['dateJoin']),
+            departmentId: staff['departmentId']?.trim() || '',
+            formType: staff['formType']?.trim() || '',
+            skillSet: staff['skillSet']?.trim() || '',
+            emailCompany: staff['emailCompany']?.trim() || '',
+            telMobile: staff['telMobile']?.trim() || '',
         };
-    }
-
-    private setFormModel(staff: Record<string, any>): void {
-        this.formConfigSignal.update(cfg => ({
-            ...cfg,
-            title: `Edit Staff: ${staff['staffName']}`,
-            model: { ...staff }
-        }));
     }
 
     //#endregion
@@ -245,17 +240,29 @@ export class ContactStaffEditComponent implements OnInit {
         }
 
         if (event['formButtonClicked']) {
+            this.saving.set(true);
             this.updateStaff(event['formButtonClicked']);
         }
     }
 
     private handleModelChange(model: Record<string, any>): void {
-        const currentFormType = model['formType'];
+        // Clear error when user type
+        this.fieldErrors.set({});
 
-        // If formType changed, reload skillSet options
-        if (currentFormType !== this.previousFormType) {
-            this.previousFormType = currentFormType;
-            this.onFormTypeChange(currentFormType);
+        const newFormType = model?.['formType'] ?? '';
+
+        // Only do if formType actually changed
+        if (newFormType !== this.previousFormType) {
+            this.previousFormType = newFormType;
+
+            if (newFormType) {
+                this.loadSkillSetForFormType(newFormType);
+            } else {
+                this.updateFieldOptions('skillSet', []);
+            }
+
+            // Clear skillSet selection when formType changes
+            this.externalPatch.set({ skillSet: '' });
         }
     }
 
@@ -267,11 +274,10 @@ export class ContactStaffEditComponent implements OnInit {
         return new Promise((resolve) => {
             this.staffService.getFormTypes().subscribe({
                 next: (data) => {
-                    this.formTypeOpts.set(data);
                     this.updateFieldOptions('formType', data);
                     resolve();
                 },
-                error: (err) => {
+                error: () => {
                     this.messageService.showError('Error', 'Failed to load Form Types');
                     resolve();
                 }
@@ -279,9 +285,8 @@ export class ContactStaffEditComponent implements OnInit {
         });
     }
 
-    private loadSkillSetDropdown(formType: string): Promise<void> {
+    private loadSkillSetForFormType(formType: string): Promise<void> {
         if (!formType) {
-            this.skillSetOpts.set([]);
             this.updateFieldOptions('skillSet', []);
             return Promise.resolve();
         }
@@ -289,96 +294,102 @@ export class ContactStaffEditComponent implements OnInit {
         return new Promise((resolve) => {
             this.staffService.getSkillSetsByFormType(formType).subscribe({
                 next: (data) => {
-                    this.skillSetOpts.set(data);
                     this.updateFieldOptions('skillSet', data);
                     resolve();
                 },
-                error: (err) => {
-                    this.messageService.showError('Error', 'Failed to load Skillset');
+                error: () => {
+                    this.updateFieldOptions('skillSet', []);
+                    this.messageService.showError('Error', 'Failed to load Skill Sets');
                     resolve();
                 }
             });
         });
     }
 
-    private onFormTypeChange(formType: string): void {
-        if (!formType) {
-            this.skillSetOpts.set([]);
-            this.updateFieldOptions('skillSet', []);
-            this.updateFormModel({ skillSet: '' });
-            return;
+    //#endregion
+
+    //#region VALIDATION
+
+    private validateForm(model: Record<string, any>): boolean {
+        const errors: Record<string, string> = {};
+
+        // Email validation
+        if (model['emailCompany']) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(model['emailCompany'])) {
+                errors['emailCompany'] = 'Please enter a valid email address';
+            }
         }
 
-        this.loadSkillSetDropdown(formType);
-        this.updateFormModel({ skillSet: '' });
-    }
+        // Phone validation - Might need requirement on this
+        if (model['telMobile']) {
+            const cleanedPhone = model['telMobile'].replace(/[\s\-\(\)]/g, '');
+            const phoneRegex = /^[\+]?[0-9]{6,15}$/;
+            
+            if (!phoneRegex.test(cleanedPhone)) {
+                errors['telMobile'] = 'Please enter a valid phone number (6-15 digits)';
+            }
+        }
 
-    //#endregion
+        this.fieldErrors.set(errors);
+        return Object.keys(errors).length === 0;
+    }
   
     //#region FORM SUBMISSION & STAFF UPDATE
 
     updateStaff(model: Record<string, any>): void {
+         // Custom validation
+        if (!this.validateForm(model)) {
+            this.messageService.showWarn('Validation', 'Please check the form for errors');
+            this.saving.set(false);
+            return;
+        }
+
         const id = this.uniqId();
         if (!id) {
-            this.messageService.showError('Error', 'Staff ID is missing');
+            this.messageService.showError('Error', 'Invalid Staff ID');
+            this.saving.set(false);
             return;
         }
 
         const payload = this.buildPayload(model);
-
-        this.saving.set(true);
         
         this.staffService.updateStaff(id, payload).subscribe({
-        next: () => {
-            this.messageService.showSuccess('Success', 'Staff updated successfully!');
-            this.saving.set(false);
-            this.loadInitialFormData(id);
-        },
-        error: (err) => {
-            this.messageService.showError(
-                'Error', 
-                err.error?.message || 'Failed to update staff'
-            );
-            this.saving.set(false);
-        }
+            next: () => {
+                this.messageService.showSuccess('Success', 'Staff updated successfully!');
+                this.saving.set(false);
+                this.router.navigate(['/contact/staff/']);
+            },
+            error: (err) => {
+                this.messageService.showError(
+                    'Error', 
+                    err.error?.error || 'Failed to update staff');
+                this.saving.set(false);
+            }
         });
     }
 
     private buildPayload(model: Record<string, any>): Record<string, any> {
-        // Field name mapping (form → backend)
-        const fieldMap: Record<string, string> = { };
-
         const dateFields = ['dateJoin'];
         const uppercaseFields = ['staffId', 'staffName'];
-
         const payload: Record<string, any> = {};
 
-        // Build payload from model
         Object.entries(model).forEach(([key, value]) => {
-            // Skip null/undefined
             if (value === null || value === undefined) return;
 
-            // Map field name if needed
-            const fieldName = fieldMap[key] || key;
-
-            // Convert dates to ISO with timezone offset
             if (dateFields.includes(key)) {
                 if (value instanceof Date) {
-                    payload[fieldName] = this.convertDateToISOWithTimezone(value);
+                    payload[key] = this.convertDateToISOWithTimezone(value);
                 } else if (typeof value === 'string' && value) {
-                    // String date (e.g., "11/17/2025") - parse then convert
                     const parsedDate = this.parseFormattedDate(value);
                     if (parsedDate) {
-                        payload[fieldName] = this.convertDateToISOWithTimezone(parsedDate);
+                        payload[key] = this.convertDateToISOWithTimezone(parsedDate);
                     }
                 }
-            }
-            // Convert to uppercase
-            else if (uppercaseFields.includes(key) && typeof value === 'string') {
-                payload[fieldName] = value.toUpperCase();
-            }
-            else {
-                payload[fieldName] = value;
+            } else if (uppercaseFields.includes(key) && typeof value === 'string') {
+                payload[key] = value.toUpperCase();
+            } else {
+                payload[key] = value;
             }
         });
 
@@ -388,21 +399,16 @@ export class ContactStaffEditComponent implements OnInit {
     //#endregion
 
     //#region FORM MANIPULATION HELPERS
+
     private updateFieldOptions(fieldKey: string, options: DropdownOption[]): void {
-        this.formConfigSignal.update(cfg => ({
+        this.formConfigSignal.update((cfg) => ({
             ...cfg,
-            fields: cfg.fields.map(field =>
+            fields: cfg.fields.map((field) =>
                 field.key === fieldKey ? { ...field, options } : field
             )
         }));
     }
 
-    private updateFormModel(updates: Record<string, any>): void {
-        this.formConfigSignal.update((cfg) => ({
-            ...cfg,
-            model: { ...cfg.model, ...updates },
-        }));
-    }
     //#endregion
   
     //#region UTILITY METHODS - Date & Format Conversions
@@ -411,17 +417,14 @@ export class ContactStaffEditComponent implements OnInit {
         if (!dateStr) return null;
 
         try {
-            // Expected format: mm/dd/yyyy
             const parts = dateStr.split('/');
             if (parts.length !== 3) return null;
 
-            const month = parseInt(parts[0], 10) - 1; // Month is 0-indexed
+            const month = parseInt(parts[0], 10) - 1;
             const day = parseInt(parts[1], 10);
             const year = parseInt(parts[2], 10);
 
             const date = new Date(year, month, day);
-            
-            // Validate the date is valid
             if (isNaN(date.getTime())) return null;
 
             return date;
@@ -430,7 +433,6 @@ export class ContactStaffEditComponent implements OnInit {
         }
     }
     
-    // Format date: "2025-12-08T00:00:00" → "08/12/2025"
     private formatDate(value: any): string {
         if (!value) return '';
 
@@ -442,21 +444,18 @@ export class ContactStaffEditComponent implements OnInit {
             const day = String(date.getDate()).padStart(2, '0');
             const year = date.getFullYear();
 
-            return `${month}/${day}/${year}`;  // mm/dd/yyyy
+            return `${month}/${day}/${year}`;
         } catch {
             return '';
         }
     }
 
     private convertDateToISOWithTimezone(date: Date): string {
-        // Get date components in local timezone (not UTC)
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
 
-        // Return ISO format with time: YYYY-MM-DDTHH:mm:ss
-        const result = `${year}-${month}-${day}T00:00:00`;
-        return result;
+        return `${year}-${month}-${day}T00:00:00`;
     }
 
     //#endregion

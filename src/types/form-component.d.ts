@@ -3,6 +3,8 @@ declare module '@ai-solutions-ui/form-component' {
   export type FieldType =
     | 'text'
     | 'number'
+    | 'email'
+    | 'tel'
     | 'date'
     | 'time'
     | 'select'

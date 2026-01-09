@@ -45,9 +45,9 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         { field: 'nric', header: 'NRIC' },
         { field: 'departmentId', header: 'Department' },
         // { field: 'roles', header: 'Role' },
+        { field: 'telMobile', header: 'Phone' },
+        { field: 'emailCompany', header: 'Email' },
         { field: 'dateJoin', header: 'Join Date', formatter: this.formatDate },
-        // { field: 'emailCompany', header: 'Email' },
-        // { field: 'telMobile', header: 'Phone' },
         // { 
         //   field: 'status', 
         //   header: 'Status', 

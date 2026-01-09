@@ -6,6 +6,7 @@ import { ContactStaffService } from '../services/contact-staff-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
 import { ButtonModule } from 'primeng/button';
+import { Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-contact-staff-add',
@@ -28,16 +29,13 @@ export class ContactStaffAddComponent implements OnInit {
 
     //#region SIGNALS - UI STATE MANAGEMENT
 
-    // Data maps for lookups
-    private departmentDataMap = signal<Map<string, string>>(new Map());
-
     // Dropdown options
     departmentOpts = signal<DropdownOption[]>([]);
     formTypeOpts = signal<DropdownOption[]>([]);
     skillSetOpts = signal<DropdownOption[]>([]);
     
     // UI loading states
-    uniqId = signal<number | null>(null);
+    fieldErrors = signal<Record<string, any>>({});
     loading = signal<boolean>(false);
     saving = signal<boolean>(false);
     
@@ -51,13 +49,13 @@ export class ContactStaffAddComponent implements OnInit {
     //#region FORM CONFIGURATION
 
     private readonly formFields = [
-        // ========== ROW 1: Staff ID, Staff Name ==========
         {
             key: 'staffId',
             label: 'Staff ID',
             type: 'text' as const,
             icon: 'pi-hashtag',
             colSpan: 3,
+            validators: [Validators.required],
         },
         {
             key: 'staffName',
@@ -65,16 +63,22 @@ export class ContactStaffAddComponent implements OnInit {
             type: 'text' as const,
             icon: 'pi-user',
             colSpan: 3,
+            validators: [Validators.required],
         },
-        // ========== ROW 2: NRIC ==========
         {
             key: 'nric',
             label: 'NRIC',
             type: 'text' as const,
             icon: 'pi-id-card',
-            colSpan: 6,
+            colSpan: 3,
         },
-        // ========== ROW 3: Department, Date Join ==========
+        {
+            key: 'telMobile',
+            label: 'Mobile No.',
+            type: 'tel' as const,
+            icon: 'pi-phone',
+            colSpan: 3,
+        },
         {
             key: 'departmentId',
             label: 'Department',
@@ -90,7 +94,14 @@ export class ContactStaffAddComponent implements OnInit {
             icon: 'pi-calendar',
             colSpan: 2,
         },
-        // ========== ROW 4: Form Type ==========
+        {
+            key: 'emailCompany',
+            label: 'Email',
+            type: 'email' as const,
+            icon: 'pi-envelope',
+            colSpan: 6,
+            validators: [Validators.email],
+        },
         {
             key: 'formType',
             label: 'Form Type',
@@ -99,7 +110,6 @@ export class ContactStaffAddComponent implements OnInit {
             colSpan: 6,
             options: [],
         },
-        // ========== ROW 5: Skill Set ==========
         {
             key: 'skillSet',
             label: 'Skillset',
@@ -119,8 +129,10 @@ export class ContactStaffAddComponent implements OnInit {
             staffId: '',
             staffName: '',
             nric: '',
+            telMobile: '',
             departmentId: '',
             dateJoin: '',
+            emailCompany: '',
             formType: '',
             skillSet: '',
         },
@@ -144,55 +156,17 @@ export class ContactStaffAddComponent implements OnInit {
 
         this.staffService.getDropdownsByTypes(requiredTypes).subscribe({
             next: (data: DropdownResponse) => {
-                this.processDropdownData(data);
-                 this.loadFormTypeDropdown().then(() => {
-                    this.loadStaff();
+                this.updateFieldOptions('departmentId', data.departments || []);
+
+                this.loadFormTypeDropdown().then(() => {
+                    this.loading.set(false);
                 });
             },
             error: (err) => {
-                this.messageService.showError('Error', err);
+                this.messageService.showError('Error', 'Failed to load form data', err);
                 this.loading.set(false);
             }
         });
-    }
-
-    private processDropdownData(data: DropdownResponse): void {
-        const departmentMap = new Map<string, string>();
-
-        const departmentOptions = (data.departments || []).map((item: DropdownOption) => {
-            departmentMap.set(item.value, item.label);
-            return {
-                value: item.value,
-                label: `${item.label}`
-            };
-        });
-
-        this.departmentDataMap.set(departmentMap);
-
-        this.departmentOpts.set(departmentOptions);
-
-        this.updateFieldOptions('departmentId', this.departmentOpts());
-    }
-
-    private loadStaff(): void {
-
-        // Create complete initial model
-        const initialModel = {
-            staffId: '',
-            staffName: '',
-            nric: '',
-            departmentId: '',
-            dateJoin: '',
-            formType: '',
-            skillSet: '',
-        };
-
-        this.formConfigSignal.update(cfg => ({
-            ...cfg,
-            title: 'Add New Staff',
-            model: initialModel,
-        }));
-        this.loading.set(false);
     }
 
     //#endregion
@@ -204,17 +178,26 @@ export class ContactStaffAddComponent implements OnInit {
         }
 
         if (event['formButtonClicked']) {
+            this.saving.set(true);
             this.addStaff(event['formButtonClicked']);
         }
     }
 
     private handleModelChange(model: Record<string, any>): void {
-        const currentFormType = model['formType'];
+        // Clear error when user type
+        this.fieldErrors.set({});
+
+        const newFormType = model?.['formType'] ?? '';
 
         // If formType changed, reload skillSet options
-        if (currentFormType !== this.previousFormType) {
-            this.previousFormType = currentFormType;
-            this.onFormTypeChange(currentFormType);
+        if (newFormType !== this.previousFormType) {
+            this.previousFormType = newFormType;
+            
+            if (newFormType) {
+                this.loadSkillSetForFormType(newFormType);
+            } else {
+                this.updateFieldOptions('skillSet', []);
+            }
         }
     }
 
@@ -230,7 +213,7 @@ export class ContactStaffAddComponent implements OnInit {
                     this.updateFieldOptions('formType', data);
                     resolve();
                 },
-                error: (err) => {
+                error: () => {
                     this.messageService.showError('Error', 'Failed to load Form Types');
                     resolve();
                 }
@@ -238,9 +221,8 @@ export class ContactStaffAddComponent implements OnInit {
         });
     }
 
-    private loadSkillSetDropdown(formType: string): Promise<void> {
+    private loadSkillSetForFormType(formType: string): Promise<void> {
         if (!formType) {
-            this.skillSetOpts.set([]);
             this.updateFieldOptions('skillSet', []);
             return Promise.resolve();
         }
@@ -248,11 +230,11 @@ export class ContactStaffAddComponent implements OnInit {
         return new Promise((resolve) => {
             this.staffService.getSkillSetsByFormType(formType).subscribe({
                 next: (data) => {
-                    this.skillSetOpts.set(data);
                     this.updateFieldOptions('skillSet', data);
                     resolve();
                 },
-                error: (err) => {
+                error: () => {
+                    this.updateFieldOptions('skillSet', []);
                     this.messageService.showError('Error', 'Failed to load Skillset');
                     resolve();
                 }
@@ -260,16 +242,33 @@ export class ContactStaffAddComponent implements OnInit {
         });
     }
 
-    private onFormTypeChange(formType: string): void {
-        if (!formType) {
-            this.skillSetOpts.set([]);
-            this.updateFieldOptions('skillSet', []);
-            this.updateFormModel({ skillSet: '' });
-            return;
+    //#endregion
+
+    //#region VALIDATION
+
+    private validateForm(model: Record<string, any>): boolean {
+        const errors: Record<string, string> = {};
+
+        // Email validation
+        if (model['emailCompany']) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(model['emailCompany'])) {
+                errors['emailCompany'] = 'Please enter a valid email address';
+            }
         }
 
-        this.loadSkillSetDropdown(formType);
-        this.updateFormModel({ skillSet: '' });
+        // Phone validation - flexible for MY/SG
+        if (model['telMobile']) {
+            const cleanedPhone = model['telMobile'].replace(/[\s\-\(\)]/g, '');
+            const phoneRegex = /^[\+]?[0-9]{8,15}$/;
+            
+            if (!phoneRegex.test(cleanedPhone)) {
+                errors['telMobile'] = 'Please enter a valid phone number (6-15 digits)';
+            }
+        }
+
+        this.fieldErrors.set(errors);
+        return Object.keys(errors).length === 0;
     }
 
     //#endregion
@@ -277,9 +276,14 @@ export class ContactStaffAddComponent implements OnInit {
     //#region FORM SUBMISSION & STAFF CREATION
 
     addStaff(model: Record<string, any>): void {
-        const payload = this.buildPayload(model);
+         // Custom validation
+        if (!this.validateForm(model)) {
+            this.messageService.showWarn('Validation', 'Please check the form for errors');
+            this.saving.set(false);
+            return;
+        }
 
-        this.saving.set(true);
+        const payload = this.buildPayload(model);
 
         this.staffService.createStaff(payload).subscribe({
             next: () => {
@@ -297,10 +301,6 @@ export class ContactStaffAddComponent implements OnInit {
     }
 
     private buildPayload(model: Record<string, any>): Record<string, any> {
-
-        // Field name mapping (form → backend)
-        const fieldMap: Record<string, string> = { };
-
         const dateFields = ['dateJoin'];
         const uppercaseFields = ['staffId', 'staffName'];
 
@@ -308,27 +308,19 @@ export class ContactStaffAddComponent implements OnInit {
 
         // Build payload from model
         Object.entries(model).forEach(([key, value]) => {
-
-            // Skip null/undefined
             if (value === null || value === undefined) return;
 
-            // Map field name if needed
-            const fieldName = fieldMap[key] || key;
-
-            // Convert dates to ISO with timezone offset
             if (dateFields.includes(key)) {
                 if (value instanceof Date) {
-                    payload[fieldName] = this.convertDateToISOWithTimezone(value);
+                    payload[key] = this.convertDateToISOWithTimezone(value);
                 } else {
-                    payload[fieldName] = value;
+                    payload[key] = value;
                 }
-            }
-            // Convert to uppercase
-            else if (uppercaseFields.includes(key) && typeof value === 'string') {
-                payload[fieldName] = value.toUpperCase();
+            } else if (uppercaseFields.includes(key) && typeof value === 'string') {
+                payload[key] = value.toUpperCase();
             }
             else {
-                payload[fieldName] = value;
+                payload[key] = value;
             }
 
         });
@@ -341,18 +333,11 @@ export class ContactStaffAddComponent implements OnInit {
     //#region FORM MANIPULATION HELPERS
 
     private updateFieldOptions(fieldKey: string, options: DropdownOption[]): void {
-        this.formConfigSignal.update(cfg => ({
-            ...cfg,
-            fields: cfg.fields.map(field =>
-                field.key === fieldKey ? { ...field, options } : field
-            )
-        }));
-    }
-
-    private updateFormModel(updates: Record<string, any>): void {
         this.formConfigSignal.update((cfg) => ({
             ...cfg,
-            model: { ...cfg.model, ...updates },
+            fields: cfg.fields.map((field) =>
+                field.key === fieldKey ? { ...field, options } : field
+            )
         }));
     }
 
@@ -360,31 +345,11 @@ export class ContactStaffAddComponent implements OnInit {
 
     //#region UTILITY METHODS - Date & Format Conversions
 
-    // Format date: "2025-12-08T00:00:00" → "08/12/2025"
-    private formatDate(value: any): string {
-        if (!value) return '';
-
-        try {
-            const date = new Date(value);
-            if (isNaN(date.getTime())) return '';
-
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = date.getFullYear();
-
-            return `${month}/${day}/${year}`;  // mm/dd/yyyy
-        } catch {
-            return '';
-        }
-    }
-
     private convertDateToISOWithTimezone(date: Date): string {
-        // Get date components in local timezone (not UTC)
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
 
-        // Return ISO format with time: YYYY-MM-DDTHH:mm:ss
         const result = `${year}-${month}-${day}T00:00:00`;
         return result;
     }

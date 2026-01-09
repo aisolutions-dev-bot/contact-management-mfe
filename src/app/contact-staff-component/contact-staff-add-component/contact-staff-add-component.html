@@ -20,7 +20,11 @@
       [remoteEntry]="uiMfeUrl"
       [exposedModule]="'./Form'"
       [exportName]="'FormComponent'"
-      [inputs]="{ config: formConfig() }"
+      [inputs]="{ 
+        config: formConfig(),
+        loading: saving(),
+        fieldErrors: fieldErrors(), 
+      }"
       (outputs)="onRemoteOutput($event)"
       ></remote-component>
   } 
