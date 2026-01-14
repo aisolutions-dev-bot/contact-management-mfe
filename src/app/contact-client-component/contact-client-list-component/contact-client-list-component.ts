@@ -52,8 +52,8 @@ export class ContactClientListComponent implements OnInit, OnChanges {
 
         return [
         {
-            label: 'Edit',
-            icon: 'pi pi-fw pi-pen-to-square',
+            label: 'Edit Client',
+            icon: 'pi pi-fw pi-file-edit',
             command: () => this.navigateToClientEdit(selected),
         },
         {

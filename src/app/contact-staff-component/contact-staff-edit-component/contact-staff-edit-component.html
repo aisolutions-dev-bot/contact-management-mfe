@@ -8,26 +8,26 @@
       ></p-button>
   </div>
 
-  @if (loading()) {
-  <div class="loading-message">
-      <i class="pi pi-spinner pi-spin"></i> Loading staff...
-  </div>
-  }
+    @if (loading()) {
+    <div class="loading-message">
+        <i class="pi pi-spinner pi-spin"></i> Loading staff...
+    </div>
+    }
 
-  @if (!loading()) {
+    @if (!loading()) {
 
-    <remote-component
-        [remoteEntry]="uiMfeUrl"
-        [exposedModule]="'./Form'"
-        [exportName]="'FormComponent'"
-        [externalPatch]="externalPatch()"
-        [inputs]="{ 
-            config: formConfig(),
-            loading: saving(),
-            fieldErrors: fieldErrors(), 
-        }"
-        (outputs)="onRemoteOutput($event)"
-    ></remote-component>
-  } 
+        <remote-component
+            [remoteEntry]="uiMfeUrl"
+            [exposedModule]="'./Form'"
+            [exportName]="'FormComponent'"
+            [externalPatch]="externalPatch()"
+            [inputs]="{ 
+                config: formConfig(),
+                loading: saving(),
+                fieldErrors: fieldErrors(), 
+            }"
+            (outputs)="onRemoteOutput($event)"
+        ></remote-component>
+    } 
 </div>
 

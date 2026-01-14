@@ -1,17 +1,29 @@
-@if (loading()) {
-<div class="loading-message">
-    <i class="pi pi-spinner pi-spin"></i> Loading client...
+<div class="contact-client-edit-wrapper">
+    <div class="actions">
+        <p-button
+            icon="pi pi-arrow-left"
+            label="Back"
+            severity="secondary"
+            routerLink="/contact/client"
+        ></p-button>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-message">
+            <i class="pi pi-spinner pi-spin"></i> Loading client...
+        </div>
+    }
+
+    @if (!loading()) {
+
+        <remote-component
+            [remoteEntry]="uiMfeUrl"
+            [exposedModule]="'./Form'"
+            [exportName]="'FormComponent'"
+            [inputs]="{ config: formConfig() }"
+            (outputs)="onRemoteOutput($event)"
+        ></remote-component>
+    } 
 </div>
-}
-
-@if (!loading()) {
-
-    <remote-component
-    [remoteEntry]="uiMfeUrl"
-    [exposedModule]="'./Form'"
-    [exportName]="'FormComponent'"
-    [inputs]="{ config: formConfig() }"
-    (outputs)="onRemoteOutput($event)"
-    ></remote-component>
-} 
+    
 

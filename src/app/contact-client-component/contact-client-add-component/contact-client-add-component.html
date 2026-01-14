@@ -1,10 +1,21 @@
-<remote-component
-  [remoteEntry]="uiMfeUrl"
-  [exposedModule]="'./Form'"
-  [exportName]="'FormComponent'"
-  [inputs]="{
-    config: formConfig(),
-    loading: loading,
-  }"
-  (outputs)="onRemoteOutput($event)"
-></remote-component>
+<div class="contact-client-add-wrapper">
+    <div class="actions">
+        <p-button
+            icon="pi pi-arrow-left"
+            label="Back"
+            severity="secondary"
+            routerLink="/contact/client"
+        ></p-button>
+    </div>
+
+    <remote-component
+    [remoteEntry]="uiMfeUrl"
+    [exposedModule]="'./Form'"
+    [exportName]="'FormComponent'"
+    [inputs]="{
+        config: formConfig(),
+        loading: loading,
+    }"
+    (outputs)="onRemoteOutput($event)"
+    ></remote-component>
+</div>

@@ -86,6 +86,7 @@ export class ContactStaffAddComponent implements OnInit {
             icon: 'pi-sitemap',
             colSpan: 4,
             options: [],
+            validators: [Validators.required],
         },
         {
             key: 'dateJoin',

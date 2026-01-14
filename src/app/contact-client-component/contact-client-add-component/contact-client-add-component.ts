@@ -1,15 +1,16 @@
 import { Component, Inject, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactClientService } from '../services/contact-client-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-contact-client-add',
   standalone: true,
-  imports: [RemoteComponent],
+  imports: [RemoteComponent, ButtonModule, RouterLink],
   templateUrl: './contact-client-add-component.html',
   styleUrls: ['./contact-client-add-component.scss'],
 })
