@@ -4,13 +4,18 @@ import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactClientService } from '../services/contact-client-service';
 import { environment } from '../../../environments/environment';
-import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
+import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
 import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-contact-client-edit',
     standalone: true,
-    imports: [RemoteComponent, ButtonModule, RouterLink],
+    imports: [
+      RemoteComponent,
+      ProgressSpinnerModule,
+      ButtonModule,
+      RouterLink],
     templateUrl: './contact-client-edit-component.html',
     styleUrls: ['./contact-client-edit-component.scss'],
 })
@@ -37,7 +42,8 @@ export class ContactClientEditComponent implements OnInit {
     
     // UI loading states
     uniqId = signal<number | null>(null);
-    loading = signal<boolean>(false);
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     saving = signal<boolean>(false);
     
     // Configuration & Environment
@@ -118,7 +124,7 @@ export class ContactClientEditComponent implements OnInit {
     //#region INITIALIZATION & DATA LOAD
 
     private loadInitialFormData(id: number): void {
-        this.loading.set(true);
+        this.loadingState.set(LoadingState.Loading);
         
         const requiredTypes = ['contacttypes'];
 
@@ -129,7 +135,7 @@ export class ContactClientEditComponent implements OnInit {
             },
             error: (err) => {
                 this.messageService.showError('Error', err);
-                this.loading.set(false);
+                this.loadingState.set(LoadingState.Error);
             }
         });
     }
@@ -153,7 +159,7 @@ export class ContactClientEditComponent implements OnInit {
     }
 
     private loadClient(id: number): void {
-        this.loading.set(true);
+        this.loadingState.set(LoadingState.Loading);
         
         this.clientService.getClientById(id).subscribe({
             next: (client) => {
@@ -164,7 +170,6 @@ export class ContactClientEditComponent implements OnInit {
                     'Error', 
                     err.error?.error || err.message || 'Failed to load client'
                 );
-                this.loading.set(false);
                 this.router.navigate(['/contact/client/list']);
             }
         });
@@ -174,7 +179,7 @@ export class ContactClientEditComponent implements OnInit {
         const formattedClient = this.formatClientData(client);
 
         this.setFormModel(formattedClient);
-        this.loading.set(false);
+        this.loadingState.set(LoadingState.Success);
     }
 
     private formatClientData(client: Record<string, any>): Record<string, any> {

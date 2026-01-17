@@ -4,13 +4,19 @@ import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactClientService } from '../services/contact-client-service';
 import { environment } from '../../../environments/environment';
-import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
+import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
 import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-contact-client-add',
   standalone: true,
-  imports: [RemoteComponent, ButtonModule, RouterLink],
+  imports: [
+    RemoteComponent, 
+    ProgressSpinnerModule,
+    ButtonModule, 
+    RouterLink
+  ],
   templateUrl: './contact-client-add-component.html',
   styleUrls: ['./contact-client-add-component.scss'],
 })
@@ -36,7 +42,8 @@ export class ContactClientAddComponent implements OnInit {
     
     // UI loading states
     uniqId = signal<number | null>(null);
-    loading = signal<boolean>(false);
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     saving = signal<boolean>(false);
     
     // Configuration & Environment
@@ -106,7 +113,7 @@ export class ContactClientAddComponent implements OnInit {
     //#region INITIALIZATION & DATA LOAD
 
     private loadInitialFormData(): void {
-        this.loading.set(true);
+        this.loadingState.set(LoadingState.Loading);
 
         const requiredTypes = ['contacttypes'];
 
@@ -117,7 +124,7 @@ export class ContactClientAddComponent implements OnInit {
             },
             error: (err) => {
                 this.messageService.showError('Error', err);
-                this.loading.set(false);
+                this.loadingState.set(LoadingState.Error);
             }
         });
     }
@@ -155,7 +162,7 @@ export class ContactClientAddComponent implements OnInit {
             title: 'Add New Client',
             model: initialModel,
         }));
-        this.loading.set(false);
+        this.loadingState.set(LoadingState.Success);
     }
 
     //#endregion
@@ -166,6 +173,7 @@ export class ContactClientAddComponent implements OnInit {
         }
 
         if (event['formButtonClicked']) {
+            this.saving.set(true);
             this.addClient(event['formButtonClicked']);
         }
     }
@@ -176,8 +184,6 @@ export class ContactClientAddComponent implements OnInit {
 
     addClient(model: Record<string, any>): void {
         const payload = this.buildPayload(model);
-
-        this.saving.set(true);
 
         this.clientService.createClient(payload).subscribe({
             next: () => {

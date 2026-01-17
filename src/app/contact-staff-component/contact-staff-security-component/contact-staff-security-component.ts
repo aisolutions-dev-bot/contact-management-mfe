@@ -4,13 +4,19 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { environment } from '../../../environments/environment';
 import { RemoteComponent } from '../../components/remote-component';
-import { DropdownOption, IAppMessageService } from '../../models/contact';
+import { DropdownOption, IAppMessageService, LoadingState } from '../../models/contact';
 import { ContactStaffService } from '../services/contact-staff-service';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-contact-staff-security',
     standalone: true,
-    imports: [RemoteComponent, ButtonModule, RouterLink],
+    imports: [
+      RemoteComponent, 
+      ProgressSpinnerModule,
+      ButtonModule, 
+      RouterLink
+    ],
     templateUrl: './contact-staff-security-component.html',
     styleUrls: ['./contact-staff-security-component.scss'],
 })
@@ -34,7 +40,8 @@ export class ContactStaffSecurityComponent implements OnInit {
     
     // UI loading states
     uniqId = signal<number | null>(null);
-    loading = signal<boolean>(false);
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     saving = signal<boolean>(false);
     
     // Configuration & Environment
@@ -142,12 +149,12 @@ export class ContactStaffSecurityComponent implements OnInit {
     //#region INITIALIZATION & DATA LOAD
 
     private loadInitialFormData(id: number): void {
-        this.loading.set(true);        
+        this.loadingState.set(LoadingState.Loading);     
         this.loadStaff(id);
     }
 
     private loadStaff(id: number): void {
-        this.loading.set(true);
+        this.loadingState.set(LoadingState.Loading);
         
         this.staffService.getStaffById(id).subscribe({
             next: (staff) => {
@@ -158,7 +165,6 @@ export class ContactStaffSecurityComponent implements OnInit {
                     'Error', 
                     err.error?.error || err.message || 'Failed to load staff'
                 );
-                this.loading.set(false);
                 this.router.navigate(['/contact/staff/list']);
             }
         });
@@ -173,7 +179,7 @@ export class ContactStaffSecurityComponent implements OnInit {
         };
 
         this.setFormModel(formData);
-        this.loading.set(false);
+        this.loadingState.set(LoadingState.Success);
     }
 
     private setFormModel(staff: Record<string, any>): void {

@@ -17,13 +17,21 @@ import { ContextMenuModule } from 'primeng/contextmenu';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ContactTableComponent } from '../../components/table-component/table-component';
-import { ContactStaffList, TableColumn } from '../../models/contact';
+import { ContactStaffList, LoadingState, TableColumn } from '../../models/contact';
 import { ContactStaffService } from '../services/contact-staff-service';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-contact-staff-list',
     standalone: true,
-    imports: [ReactiveFormsModule, ContactTableComponent, TableModule, TagModule, ContextMenuModule],
+    imports: [
+      ReactiveFormsModule, 
+      ContactTableComponent, 
+      ProgressSpinnerModule,
+      TableModule, 
+      TagModule, 
+      ContextMenuModule
+    ],
     templateUrl: './contact-staff-list-component.html',
     styleUrls: ['./contact-staff-list-component.scss'],
 })
@@ -35,8 +43,9 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     cdr = inject(ChangeDetectorRef);
     private staffService = inject(ContactStaffService);
 
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     staffs = signal<ContactStaffList[]>([]);
-    loading = signal(false);
     selectedRowData = signal<ContactStaffList | null>(null);
 
     columns = signal<TableColumn[]>([
@@ -85,13 +94,7 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     });
 
     ngOnInit() {
-        this.staffService.getContactStaff().subscribe({
-            next: (data) => {
-                this.staffs.set(data);
-                this.cdr.detectChanges();
-            },
-            error: (err) => console.error(err),
-        });
+       this.load();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -101,21 +104,18 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     }
 
     load(): void {
-        this.loading.set(true); 
+        this.loadingState.set(LoadingState.Loading); 
 
         this.staffService.getContactStaff(this.filter).subscribe({
             next: (data) => {
-                
-                this.staffs.set(data || []);
-                this.loading.set(false);
-                this.cdr.detectChanges();
-
+              this.staffs.set(data || []);
+              this.loadingState.set(LoadingState.Success); 
+              this.cdr.detectChanges();
             },
             error: (err) => {
-
-                this.staffs.set([]);
-                this.loading.set(false);
-                this.cdr.detectChanges();
+              this.staffs.set([]);
+                this.loadingState.set(LoadingState.Error); 
+              this.cdr.detectChanges();
             }
         });
     }

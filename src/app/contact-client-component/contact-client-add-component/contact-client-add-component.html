@@ -8,14 +8,20 @@
         ></p-button>
     </div>
 
-    <remote-component
-    [remoteEntry]="uiMfeUrl"
-    [exposedModule]="'./Form'"
-    [exportName]="'FormComponent'"
-    [inputs]="{
-        config: formConfig(),
-        loading: loading,
-    }"
-    (outputs)="onRemoteOutput($event)"
-    ></remote-component>
+    @if (loadingState() === LoadingState.Loading) {
+      <div class="spinner-wrapper">
+        <p-progressSpinner strokeWidth="4" fill="transparent" />
+      </div>
+    } @else if (loadingState() === LoadingState.Success) {
+      <remote-component
+      [remoteEntry]="uiMfeUrl"
+      [exposedModule]="'./Form'"
+      [exportName]="'FormComponent'"
+      [inputs]="{
+          config: formConfig(),
+          loading: saving(),
+      }"
+      (outputs)="onRemoteOutput($event)"
+      ></remote-component>
+    }
 </div>

@@ -4,14 +4,20 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { environment } from '../../../environments/environment';
 import { RemoteComponent } from '../../components/remote-component';
-import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
+import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
 import { ContactStaffService } from '../services/contact-staff-service';
 import { Validators } from '@angular/forms';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-contact-staff-edit',
     standalone: true,
-    imports: [RemoteComponent, ButtonModule, RouterLink],
+    imports: [
+      RemoteComponent, 
+      ProgressSpinnerModule,
+      ButtonModule, 
+      RouterLink
+    ],
     templateUrl: './contact-staff-edit-component.html',
     styleUrls: ['./contact-staff-edit-component.scss'],
 })
@@ -34,7 +40,8 @@ export class ContactStaffEditComponent implements OnInit {
     externalPatch = signal<Record<string, any> | null>(null);
     fieldErrors = signal<Record<string, any>>({});
     uniqId = signal<number | null>(null);
-    loading = signal<boolean>(false);
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     saving = signal<boolean>(false);
     
     // Configuration & Environment
@@ -150,34 +157,35 @@ export class ContactStaffEditComponent implements OnInit {
     //#region INITIALIZATION & DATA LOAD
 
     private loadInitialFormData(id: number): void {
-        this.loading.set(true);
-        
-        const requiredTypes = ['departments'];
+      this.loadingState.set(LoadingState.Loading);
 
-        this.staffService.getDropdownsByTypes(requiredTypes).subscribe({
-            next: (data: DropdownResponse) => {
-                this.updateFieldOptions('departmentId', data.departments || []);
-                
-                this.loadFormTypeDropdown().then(() => {
-                    this.loadStaff(id);
-                });
-            },
-            error: (err) => {
-                this.messageService.showError('Error', 'Failed to load form data', err);
-                this.loading.set(false);
-            }
-        });
+      const requiredTypes = ['departments'];
+
+      this.staffService.getDropdownsByTypes(requiredTypes).subscribe({
+          next: (data: DropdownResponse) => {
+              this.updateFieldOptions('departmentId', data.departments || []);
+              
+              this.loadFormTypeDropdown().then(() => {
+                  this.loadStaff(id);
+              });
+          },
+          error: (err) => {
+              this.messageService.showError('Error', 'Failed to load form data', err);
+              this.loadingState.set(LoadingState.Error);
+          }
+      });
     }
 
     private loadStaff(id: number): void {
+        this.loadingState.set(LoadingState.Loading);
+        
         this.staffService.getStaffById(id).subscribe({
             next: (staff) => {
                 this.handleStaffLoaded(staff);
             },
             error: (err) => {
-                this.messageService.showError('Error', 'Failed to load staff data', err);
-                this.loading.set(false);
-                this.router.navigate(['/contact/staff']);
+              this.messageService.showError('Error', 'Failed to load staff data', err);
+              this.router.navigate(['/contact/staff']);
             }
         });
     }
@@ -215,7 +223,7 @@ export class ContactStaffEditComponent implements OnInit {
             },
         }));
 
-        this.loading.set(false);
+        this.loadingState.set(LoadingState.Success);
     }
 
     private formatStaffData(staff: Record<string, any>): Record<string, any> {

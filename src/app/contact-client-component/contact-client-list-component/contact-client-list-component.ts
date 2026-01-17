@@ -17,13 +17,21 @@ import { ContextMenuModule } from 'primeng/contextmenu';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ContactTableComponent } from '../../components/table-component/table-component';
-import { ContactClientList, TableColumn } from '../../models/contact';
+import { ContactClientList, LoadingState, TableColumn } from '../../models/contact';
 import { ContactClientService } from '../services/contact-client-service';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-contact-client-list',
     standalone: true,
-    imports: [ReactiveFormsModule, ContactTableComponent, TableModule, TagModule, ContextMenuModule],
+    imports: [
+      ReactiveFormsModule, 
+      ContactTableComponent, 
+      ProgressSpinnerModule,
+      TableModule, 
+      TagModule, 
+      ContextMenuModule
+    ],
     templateUrl: './contact-client-list-component.html',
     styleUrls: ['./contact-client-list-component.scss'],
 })
@@ -35,8 +43,9 @@ export class ContactClientListComponent implements OnInit, OnChanges {
     cdr = inject(ChangeDetectorRef);
     private clientService = inject(ContactClientService);
 
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     clients = signal<ContactClientList[]>([]);
-    loading = signal(false);
     selectedRowData = signal<ContactClientList | null>(null);
 
     columns = signal<TableColumn[]>([
@@ -67,13 +76,7 @@ export class ContactClientListComponent implements OnInit, OnChanges {
     });
 
     ngOnInit() {
-        this.clientService.getContactClient().subscribe({
-            next: (data) => {
-                this.clients.set(data);
-                this.cdr.detectChanges();
-            },
-            error: (err) => console.error(err),
-        });
+      this.load();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -83,21 +86,18 @@ export class ContactClientListComponent implements OnInit, OnChanges {
     }
 
     load(): void {
-        this.loading.set(true); 
+        this.loadingState.set(LoadingState.Loading);
 
         this.clientService.getContactClient(this.filter).subscribe({
             next: (data) => {
-                
-                this.clients.set(data || []);
-                this.loading.set(false);
-                this.cdr.detectChanges();
-
+              this.clients.set(data || []);
+              this.loadingState.set(LoadingState.Success);
+              this.cdr.detectChanges();
             },
-            error: (err) => {
-
-                this.clients.set([]);
-                this.loading.set(false);
-                this.cdr.detectChanges();
+            error: () => {
+              this.clients.set([]);
+              this.loadingState.set(LoadingState.Error);
+              this.cdr.detectChanges();
             }
         });
     }

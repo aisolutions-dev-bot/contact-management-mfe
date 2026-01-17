@@ -76,9 +76,15 @@ export interface DropdownOption {
 
 export interface DropdownResponse {
   clients: DropdownOption[];
-  projects: DropdownOption[];
   staff: DropdownOption[];
   departments: DropdownOption[];
   contacts: DropdownOption[];
   contacttypes: DropdownOption[];
+}
+
+export enum LoadingState {
+  Idle = 'idle',
+  Loading = 'loading',
+  Success = 'success',
+  Error = 'error',
 }

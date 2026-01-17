@@ -8,21 +8,18 @@
       ></p-button>
   </div>
 
-  @if (loading()) {
-  <div class="loading-message">
-      <i class="pi pi-spinner pi-spin"></i> Loading staff...
-  </div>
-  }
-
-  @if (!loading()) {
-
-      <remote-component
+  @if (loadingState() === LoadingState.Loading) {
+    <div class="spinner-wrapper">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+    </div>
+  } @else if (loadingState() === LoadingState.Success) {
+    <remote-component
       [remoteEntry]="uiMfeUrl"
       [exposedModule]="'./Form'"
       [exportName]="'FormComponent'"
       [inputs]="{ config: formConfig() }"
       (outputs)="onRemoteOutput($event)"
-      ></remote-component>
+    ></remote-component>
   } 
 
 </div>

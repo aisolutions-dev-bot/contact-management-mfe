@@ -4,14 +4,20 @@ import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactStaffService } from '../services/contact-staff-service';
 import { environment } from '../../../environments/environment';
-import { DropdownOption, DropdownResponse, IAppMessageService } from '../../models/contact';
+import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
 import { ButtonModule } from 'primeng/button';
 import { Validators } from '@angular/forms';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-contact-staff-add',
   standalone: true,
-  imports: [RemoteComponent, ButtonModule, RouterLink],
+  imports: [
+    RemoteComponent,
+    ProgressSpinnerModule, 
+    ButtonModule, 
+    RouterLink
+  ],
   templateUrl: './contact-staff-add-component.html',
   styleUrls: ['./contact-staff-add-component.scss'],
 })
@@ -36,7 +42,8 @@ export class ContactStaffAddComponent implements OnInit {
     
     // UI loading states
     fieldErrors = signal<Record<string, any>>({});
-    loading = signal<boolean>(false);
+    LoadingState = LoadingState;
+    loadingState = signal<LoadingState>(LoadingState.Loading);
     saving = signal<boolean>(false);
     
     // Configuration & Environment
@@ -151,7 +158,7 @@ export class ContactStaffAddComponent implements OnInit {
     //#region INITIALIZATION & DATA LOAD
 
     private loadInitialFormData(): void {
-        this.loading.set(true);
+       this.loadingState.set(LoadingState.Loading);
 
         const requiredTypes = ['departments'];
 
@@ -160,12 +167,12 @@ export class ContactStaffAddComponent implements OnInit {
                 this.updateFieldOptions('departmentId', data.departments || []);
 
                 this.loadFormTypeDropdown().then(() => {
-                    this.loading.set(false);
+                    this.loadingState.set(LoadingState.Success);
                 });
             },
             error: (err) => {
                 this.messageService.showError('Error', 'Failed to load form data', err);
-                this.loading.set(false);
+                this.loadingState.set(LoadingState.Error);
             }
         });
     }

@@ -4,9 +4,21 @@
   flex-direction: column;
 }
 
-.contact-client-edit-wrapper > remote-component {
-  margin-bottom: 1rem;
-  display: inline-block;
+.spinner-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 30vh;
+}
+
+.spinner-wrapper::before {
+    content: '';
+    flex-grow: 1;
+}
+
+:host ::ng-deep .p-progressspinner-circle {
+    stroke: var(--p-primary-400) !important;
 }
 
 .actions {
