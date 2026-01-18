@@ -7,6 +7,7 @@ import { RemoteComponent } from '../../components/remote-component';
 import { DropdownOption, IAppMessageService, LoadingState } from '../../models/contact';
 import { ContactStaffService } from '../services/contact-staff-service';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { Validators } from '@angular/forms';
 
 @Component({
     selector: 'app-contact-staff-security',
@@ -72,6 +73,7 @@ export class ContactStaffSecurityComponent implements OnInit {
             type: 'text' as const,
             icon: 'pi-user',
             colSpan: 6,
+            validators: [Validators.required],
         },
         {
             key: 'password',
@@ -198,6 +200,7 @@ export class ContactStaffSecurityComponent implements OnInit {
         if (event['modelChange']) { }
 
         if (event['formButtonClicked']) {
+            this.saving.set(true);
             this.updateStaffSecurity(event['formButtonClicked']);
         }
     }
@@ -222,8 +225,6 @@ export class ContactStaffSecurityComponent implements OnInit {
         }
 
         const payload = this.buildPayload(model);
-
-        this.saving.set(true);
         
         this.staffService.updateStaffSecurity(id, payload).subscribe({
             next: () => {

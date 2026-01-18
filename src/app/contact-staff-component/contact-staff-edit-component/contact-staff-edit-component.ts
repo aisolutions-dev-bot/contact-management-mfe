@@ -342,6 +342,8 @@ export class ContactStaffEditComponent implements OnInit {
         this.fieldErrors.set(errors);
         return Object.keys(errors).length === 0;
     }
+
+    //#endregion
   
     //#region FORM SUBMISSION & STAFF UPDATE
 
