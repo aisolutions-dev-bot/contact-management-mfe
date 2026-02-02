@@ -7,10 +7,16 @@
       label="New Staff"
       routerLink="/contact/staff/add"
     ></p-button>
+
     <app-contact-staff-filter-component
       [(filter)]="filter"
     ></app-contact-staff-filter-component>
-    <p-button label="Import" icon="pi pi-file-import" (click)="openImportDialog()"></p-button>
+
+    <p-button 
+      label="Import" 
+      icon="pi pi-file-import" 
+      (click)="navigateToImport()"
+    ></p-button>
   </div>
 
   <app-contact-staff-list
