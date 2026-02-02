@@ -9,10 +9,21 @@
   </div>
 
   @if (loadingState() === LoadingState.Loading) {
+
     <div class="spinner-wrapper">
       <p-progressSpinner strokeWidth="4" fill="transparent" />
     </div>
+
   } @else if (loadingState() === LoadingState.Success) {
+
+    <!-- Spinner Overlay -->
+    @if (saving()) {
+      <div class="spinner-overlay">
+        <p-progressSpinner strokeWidth="4" fill="transparent" />
+      </div>
+    }
+
+    <!-- Form Section -->
     <remote-component
       [remoteEntry]="uiMfeUrl"
       [exposedModule]="'./Form'"
@@ -21,9 +32,22 @@
         config: formConfig(),
         loading: saving(),
         fieldErrors: fieldErrors(), 
+        triggerSubmit: triggerSubmit()
       }"
       (outputs)="onRemoteOutput($event)"
     ></remote-component>
-  } 
+
+    <!-- Floating Menu -->
+    <app-floating-action-bar 
+      [visible]="true" 
+      [loading]="saving()" 
+      [buttons]="actionButtons" 
+      (cancel)="onCancel()"
+      (save)="onSave()"
+    ></app-floating-action-bar>
+
+  } @else if (loadingState() === LoadingState.Error) {
+    <p>Something went wrong.</p>
+  }
 </div>
 

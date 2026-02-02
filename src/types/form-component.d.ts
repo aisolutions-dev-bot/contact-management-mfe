@@ -51,6 +51,7 @@ declare module '@ai-solutions-ui/form-component' {
     model: Record<KeysOf<T>, NonNullable<any>>;
     extraSection?: { key: string; label: string; type: 'checkbox' | 'radio' };
     buttonLabel?: string | ((m: any) => string);
+    showButton?: boolean;
 
     // Layout configuration
     layout?: 'vertical' | 'grid';  // Default: 'vertical'
