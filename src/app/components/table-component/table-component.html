@@ -1,0 +1,18 @@
+<remote-component
+    #remoteTable
+    [exposedModule]="'./Table'"
+    [exportName]="'TableComponent'"
+    [inputs]="{
+        value: value,
+        columns: columns,
+        styleClass: styleClass,
+        tableStyle: tableStyle,
+        showGridlines: showGridlines,
+        cellClass: cellClass,
+        scrollable: scrollable,
+        paginator: paginator,
+        rows: rows,
+    }"
+    [bodyTemplate]="bodyTemplate"
+    (outputs)="forwardOutputs($event)"
+></remote-component>

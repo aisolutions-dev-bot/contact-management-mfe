@@ -1,0 +1,55 @@
+<!-- trigger -->
+<p-button label="Filter" icon="pi pi-filter" (onClick)="toggle($event)"></p-button>
+
+<!-- popover -->
+<p-popover #ContactStaffFilter styleClass="cont-menu-popover">
+  <div class="cont-menu">
+    <form [formGroup]="form" class="filter-bar">
+      <p-select
+        formControlName="status"
+        [options]="statusOpts()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Status"
+        [filter]="true"
+        [showClear]="true"
+      >
+      </p-select>
+
+      <p-select
+        formControlName="staffId"
+        [options]="staffOpts()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Staff"
+        [filter]="true"
+        [showClear]="true"
+      >
+      </p-select>
+
+      <input
+        pInputText
+        formControlName="nric"
+        placeholder="NRIC"  
+      />
+
+      <p-datePicker
+        formControlName="dateFrom"
+        placeholder="Date Join From"
+        dateFormat="yy-mm-dd"
+        [showIcon]="true"
+      >
+      </p-datePicker>
+      <p-datePicker
+        formControlName="dateTo"
+        placeholder="Date Join To"
+        dateFormat="yy-mm-dd"
+        [showIcon]="true"
+      >
+      </p-datePicker>
+
+      <p-button label="Apply" (onClick)="apply()"> </p-button>
+      <p-button label="Clear" styleClass="p-button-outlined" (onClick)="clear()"> </p-button>
+    </form>
+  </div>
+</p-popover>

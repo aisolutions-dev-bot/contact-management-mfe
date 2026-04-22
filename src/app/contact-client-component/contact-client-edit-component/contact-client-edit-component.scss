@@ -1,0 +1,30 @@
+.contact-client-edit-wrapper {
+  margin: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.spinner-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 30vh;
+}
+
+.spinner-wrapper::before {
+    content: '';
+    flex-grow: 1;
+}
+
+:host ::ng-deep .p-progressspinner-circle {
+    stroke: var(--p-primary-400) !important;
+}
+
+.actions {
+  display: flex;
+  // justify-content: space-between;
+  align-items: center;
+  gap: 1rem; // controls the spacing between filter and button
+  margin-bottom: 1rem; // optional
+}

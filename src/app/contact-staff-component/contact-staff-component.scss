@@ -1,0 +1,64 @@
+.contact-staff-list-wrapper {
+  margin: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-staff-list-wrapper > remote-component {
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.actions {
+  display: flex;
+  // justify-content: space-between;
+  align-items: center;
+  gap: 1rem; // controls the spacing between filter and button
+  margin-bottom: 1rem; // optional
+}
+
+// ---------- pop-over wrapper ----------
+::ng-deep .contact-type-popover {
+  .p-popover-content {
+    padding: 0.75rem 0;
+  }
+}
+
+// ---------- menu ----------
+::ng-deep .cont-menu-popover {
+  .p-popover-content {
+    padding: 0;
+  }
+}
+
+.cont-menu {
+  width: 16rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+
+  &__header {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--text-color-secondary);
+    background: var(--surface-ground);
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem;
+  }
+
+  &__item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+  }
+}

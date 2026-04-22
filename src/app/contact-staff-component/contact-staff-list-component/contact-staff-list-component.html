@@ -1,0 +1,44 @@
+<div class="contact-staff-list-wrapper">  
+  @if (loadingState() === LoadingState.Loading) {
+    <div class="spinner-wrapper">
+        <p-progressSpinner strokeWidth="4" fill="transparent" />
+    </div>
+  } @else if (loadingState() === LoadingState.Success) {
+    <contact-table-component
+      [value]="staffs()"
+      [columns]="columns()"
+      styleClass=""
+      [tableStyle]="{ 'min-width': '60rem' }"
+      [scrollable]="true"
+
+    >
+      <ng-template #body let-rowData let-columns="columns">
+        <tr
+          class="clickable-row"
+          (contextmenu)="onContextMenu($event, rowData); contextMenu.toggle($event)"
+          #contextMenuTrigger
+        >
+          @for (col of columns; track col.field) {
+            <td>
+              @if (col.type === 'tag') {
+                <p-tag 
+                  [value]="col.tagConfig?.[rowData[col.field]]?.label || rowData[col.field]" 
+                  [severity]="col.tagConfig?.[rowData[col.field]]?.severity">
+                </p-tag>
+              }
+              @else if (col.formatter) {
+                {{ col.formatter(rowData[col.field]) }}
+              } @else{
+                {{ rowData[col.field] }}
+              }
+            </td>
+          }
+        </tr>
+      </ng-template>
+    </contact-table-component>
+
+    <p-contextMenu #contextMenu [model]="contextMenuItems()"></p-contextMenu>
+  } @else if (loadingState() === LoadingState.Error) {
+    <p>Something went wrong.</p>
+  }
+</div>

@@ -1,0 +1,12 @@
+<remote-component
+    [remoteEntry]="remoteEntry"
+    [exposedModule]="exposedModule"
+    [exportName]="exportName"
+    [inputs]="{
+        buttons: buttons,
+        visible: visible,
+        loading: loading,
+        alignment: alignment
+    }"
+    (outputs)="forwardOutputs($event)"
+></remote-component>

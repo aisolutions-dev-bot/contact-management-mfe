@@ -1,0 +1,118 @@
+<div class="import-dialog-container">
+  <!-- Drag and Drop Zone -->
+  @if (!parsedData().length && !isProcessing()) {
+    <div
+      class="drop-zone"
+      [class.drag-over]="isDragOver()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <i class="pi pi-cloud-upload"></i>
+      <p class="drop-title">Drag and drop your Excel file here</p>
+      <p class="sub-text">or</p>
+      <input
+        type="file"
+        #fileInput
+        hidden
+        accept=".xlsx,.xls,.csv"
+        (change)="onFileSelect($event)"
+      />
+      <button
+        pButton
+        label="Browse Files"
+        icon="pi pi-folder-open"
+        class="p-button-outlined"
+        (click)="fileInput.click()"
+      ></button>
+      <p class="file-types">Supported: .xlsx, .xls, .csv</p>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isProcessing()) {
+    <div class="processing-state">
+      <p-progressBar mode="indeterminate" [style]="{ height: '6px' }"></p-progressBar>
+      <p>Processing file...</p>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (errorMessage()) {
+    <div class="error-container">
+      <p-message severity="error" [text]="errorMessage()"></p-message>
+    </div>
+  }
+
+  <!-- Preview Table -->
+  @if (parsedData().length && !isProcessing()) {
+    <div class="preview-section">
+      <div class="preview-header">
+        <h4>Preview ({{ parsedData().length }} records found)</h4>
+        <button
+          pButton
+          label="Clear"
+          icon="pi pi-times"
+          class="p-button-text p-button-sm"
+          (click)="clearData()"
+        ></button>
+      </div>
+
+      <p-table
+        [value]="parsedData()"
+        [scrollable]="true"
+        scrollHeight="300px"
+        styleClass="p-datatable-sm p-datatable-striped"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Staff ID</th>
+            <th>Staff Name</th>
+            <th>NRIC</th>
+            <th>Department</th>
+            <th>Join Date</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td>{{ row.staffId }}</td>
+            <td>{{ row.staffName }}</td>
+            <td>{{ row.nric }}</td>
+            <td>{{ row.departmentId }}</td>
+            <td>{{ row.dateJoin }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <!-- Validation Summary -->
+      @if (validationErrors().length) {
+        <div class="validation-errors">
+          <p-message severity="warn" text="Some rows have validation issues:"></p-message>
+          <ul>
+            @for (error of validationErrors(); track $index) {
+              <li>{{ error }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Action Buttons -->
+  <div class="dialog-footer">
+    <button
+      pButton
+      label="Cancel"
+      icon="pi pi-times"
+      class="p-button-text"
+      (click)="cancel()"
+    ></button>
+    <button
+      pButton
+      label="Import"
+      icon="pi pi-check"
+      [disabled]="!parsedData().length || isProcessing()"
+      (click)="confirmImport()"
+    ></button>
+  </div>
+</div>

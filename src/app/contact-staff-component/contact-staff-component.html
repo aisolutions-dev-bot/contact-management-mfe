@@ -1,0 +1,27 @@
+<div class="contact-staff-list-wrapper">
+  <h2>Staff Master</h2>
+
+  <div class="actions">
+    <p-button
+      icon="pi pi-plus"
+      label="New Staff"
+      routerLink="/contact/staff/add"
+    ></p-button>
+
+    <app-contact-staff-filter-component
+      [(filter)]="filter"
+    ></app-contact-staff-filter-component>
+
+    <p-button 
+      label="Import" 
+      icon="pi pi-file-import" 
+      (click)="navigateToImport()"
+    ></p-button>
+  </div>
+
+  <app-contact-staff-list
+    #table
+    [filter]="filter()"
+    (filterChange)="filter.set($event)"
+  ></app-contact-staff-list>
+</div>

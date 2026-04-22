@@ -1,0 +1,57 @@
+.contact-client-list-wrapper {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.spinner-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 30vh;
+}
+
+.spinner-wrapper::before {
+    content: '';
+    flex-grow: 1;
+}
+
+:host ::ng-deep .p-progressspinner-circle {
+    stroke: var(--p-primary-400) !important;
+}
+
+// ============================================================
+// Clickable Row Styles
+// ============================================================
+
+::ng-deep tr.clickable-row {
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+  transform-origin: center;
+
+  /* Hover - lift with shadow and color change */
+  &:hover {
+    background-color: #f4f7fb !important;
+    transform: translateY(-2px);
+
+    td {
+      color: #0056b3;
+    }
+  }
+
+  /* Active/press - push back down */
+  &:active {
+    background-color: #e9f0fb !important;
+    transform: translateY(0);
+  }
+
+  /* Keyboard focus */
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(11, 109, 246, 0.12);
+    background-color: #eef6ff !important;
+  }
+}
+

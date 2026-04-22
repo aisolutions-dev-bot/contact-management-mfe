@@ -1,0 +1,16 @@
+<remote-component
+  [exposedModule]="'./Card'"
+  [exportName]="'CardComponent'"
+  [inputs]="{
+    header: header,
+    title: title,
+    subtitle: subtitle,
+    style: style,
+    cardHeader: cardHeader,
+    cardTitle: cardTitle,
+    cardSubtitle: cardSubtitle,
+    cardContent: cardContent,
+    cardFooter: cardFooter,
+  }"
+  (outputs)="forwardOutputs($event)"
+></remote-component>

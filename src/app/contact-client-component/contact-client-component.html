@@ -1,0 +1,21 @@
+<div class="contact-client-list-wrapper">
+  <h2>Client Master</h2>
+
+  <div class="actions">
+    <p-button
+      icon="pi pi-plus"
+      label="New Client"
+      routerLink="/contact/client/add"
+    ></p-button>
+    <app-contact-client-filter-component
+      [(filter)]="filter"
+    ></app-contact-client-filter-component>
+    <p-button label="Import" icon="pi pi-file-import" (click)="openImportDialog()"></p-button>
+  </div>
+
+  <app-contact-client-list
+    #table
+    [filter]="filter()"
+    (filterChange)="filter.set($event)"
+  ></app-contact-client-list>
+</div>

@@ -1,0 +1,39 @@
+<!-- trigger -->
+<p-button label="Filter" icon="pi pi-filter" (onClick)="toggle($event)"></p-button>
+
+<!-- popover -->
+<p-popover #ContactClientFilter styleClass="cont-menu-popover">
+  <div class="cont-menu">
+    <form [formGroup]="form" class="filter-bar">
+      <p-select
+        formControlName="status"
+        [options]="statusOpts()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Status"
+        [filter]="true"
+      >
+      </p-select>
+
+      <p-select
+        formControlName="contactId"
+        [options]="contactsOpts()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Contact"
+        [filter]="true"
+        [showClear]="true"
+      >
+      </p-select>
+
+      <input
+        pInputText
+        formControlName="contactRegId"
+        placeholder="Contact Reg. No."  
+      />
+
+      <p-button label="Apply" (onClick)="apply()"> </p-button>
+      <p-button label="Clear" styleClass="p-button-outlined" (onClick)="clear()"> </p-button>
+    </form>
+  </div>
+</p-popover>
