@@ -42,7 +42,9 @@ export class ContactStaffComponent implements OnInit {
         @Inject('AUTH_SERVICE') public authService: IAuthService,
     ) { }
 
-    filter = signal<Record<string, any>>({});
+    private readonly FILTER_KEY = 'contact_staff_filter';
+
+    filter = signal<Record<string, any>>(this.restoreFilter());
 
     @ViewChild('table') table!: ContactStaffListComponent;
 
@@ -59,6 +61,26 @@ export class ContactStaffComponent implements OnInit {
         this.canSecurityStaff = accesses.some((a) => a.accessCode === this.SECURITY_ACCESS_CODE && a.accessValue);
         this.canImportStaff   = accesses.some((a) => a.accessCode === this.IMPORT_ACCESS_CODE   && a.accessValue);
         this.cdr.markForCheck();
+    }
+
+    onFilterChange(f: Record<string, any>): void {
+        this.filter.set(f);
+        this.persistFilter(f);
+    }
+
+    private restoreFilter(): Record<string, any> {
+        try {
+            const raw = sessionStorage.getItem(this.FILTER_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    private persistFilter(f: Record<string, any>): void {
+        try {
+            sessionStorage.setItem(this.FILTER_KEY, JSON.stringify(f));
+        } catch { }
     }
 
     navigateToImport(): void {

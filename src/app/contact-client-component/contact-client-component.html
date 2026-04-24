@@ -11,6 +11,7 @@
     }
     <app-contact-client-filter-component
       [(filter)]="filter"
+      (applied)="onFilterChange(filter())"
     ></app-contact-client-filter-component>
     @if (canImportClient) {
       <p-button

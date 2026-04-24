@@ -12,6 +12,7 @@
 
     <app-contact-staff-filter-component
       [(filter)]="filter"
+      (applied)="onFilterChange(filter())"
     ></app-contact-staff-filter-component>
 
     @if (canImportStaff) {

@@ -47,7 +47,9 @@ export class ContactClientComponent implements OnInit {
         @Inject('AUTH_SERVICE') public authService: IAuthService,
     ) { }
 
-    filter = signal<Record<string, any>>({});
+    private readonly FILTER_KEY = 'contact_client_filter';
+
+    filter = signal<Record<string, any>>(this.restoreFilter());
     loading = signal(false);
 
     @ViewChild('table') table!: ContactClientListComponent;
@@ -64,6 +66,26 @@ export class ContactClientComponent implements OnInit {
         this.canDeleteClient = accesses.some((a) => a.accessCode === this.DELETE_ACCESS_CODE && a.accessValue);
         this.canImportClient = accesses.some((a) => a.accessCode === this.IMPORT_ACCESS_CODE && a.accessValue);
         this.cdr.markForCheck();
+    }
+
+    onFilterChange(f: Record<string, any>): void {
+        this.filter.set(f);
+        this.persistFilter(f);
+    }
+
+    private restoreFilter(): Record<string, any> {
+        try {
+            const raw = sessionStorage.getItem(this.FILTER_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    private persistFilter(f: Record<string, any>): void {
+        try {
+            sessionStorage.setItem(this.FILTER_KEY, JSON.stringify(f));
+        } catch { }
     }
 
     openImportDialog(): void {
