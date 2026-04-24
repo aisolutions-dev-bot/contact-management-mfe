@@ -37,6 +37,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 })
 export class ContactClientListComponent implements OnInit, OnChanges {
     @Input({ required: true }) filter!: Record<string, any>;
+    @Input() canEdit = false;
     @Output() filterChange = new EventEmitter<Record<string, any>>();
 
     private router = inject(Router);
@@ -59,20 +60,22 @@ export class ContactClientListComponent implements OnInit, OnChanges {
         const selected = this.selectedRowData();
         if (!selected) return [];
 
-        return [
-        {
-            label: 'Edit Client',
-            icon: 'pi pi-fw pi-file-edit',
-            command: () => this.navigateToClientEdit(selected),
-        },
-        {
-            separator: true
-        },
-        {
-            label: 'Cancel',
-            icon: 'pi pi-fw pi-times'
-        },
-    ]
+        const items: any[] = [];
+
+        if (this.canEdit) {
+            items.push({
+                label: 'Edit Client',
+                icon: 'pi pi-fw pi-file-edit',
+                command: () => this.navigateToClientEdit(selected),
+            });
+        }
+
+        if (items.length === 0) return [];
+
+        items.push({ separator: true });
+        items.push({ label: 'Cancel', icon: 'pi pi-fw pi-times' });
+
+        return items;
     });
 
     ngOnInit() {

@@ -1,10 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, inject, ChangeDetectorRef } from '@angular/core';
 import { RemoteComponent } from '../remote-component';
 import { environment } from '../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { IAuthService } from '../../models/auth';
 
 @Component({
     selector: 'contact-tabs-router',
@@ -14,39 +15,67 @@ import { filter } from 'rxjs/operators';
     styleUrl: './contact-tabs-router.scss',
 })
 export class ContactTabsRouter implements OnInit, OnDestroy {
+    private readonly MODULE_ID = 'mod03';
     uiMfeUrl = environment.uiMfeUrl;
+    private cdr = inject(ChangeDetectorRef);
 
-    // Need to make the tabs dynamically loaded based on customer's subscription
-    // in future
-    tabs: Record<string, { label: string; icon?: string }> = {
-        //'/contact/dashboard': { label: 'Dashboard' },
-        '/contact/client': { label: 'Client Master' },
-        '/contact/staff': { label: 'Staff Master' },
+    private baseTabs: Record<string, { label: string; icon?: string; accessCode: string }> = {
+        '/contact/client': {
+            label: 'Client Master',
+            accessCode: 'a0301',
+        },
+        '/contact/staff': {
+            label: 'Staff Master',
+            accessCode: 'a0303',
+        },
     };
 
+    tabs: Record<string, { label: string; icon?: string }> = {};
     activeRoute = '';
     private sub?: Subscription;
 
-    constructor(private router: Router) {}
+    constructor(
+        private router: Router,
+        @Inject('AUTH_SERVICE') public authService: IAuthService,
+    ) {}
 
-    ngOnInit() {
-        // Set initial route
+    async ngOnInit(): Promise<void> {
+        try {
+            await this.authService.fetchUserRole();
+            await this.authService.fetchGroupAuthorityAccesses(this.MODULE_ID);
+        } catch {}
+
+        const accesses = this.authService.groupAuthorityAccesses();
+
+        if (accesses.length === 0) {
+            this.tabs = Object.fromEntries(
+                Object.entries(this.baseTabs).map(([k, v]) => [k, { label: v.label, icon: v.icon }])
+            );
+        } else {
+            this.tabs = Object.fromEntries(
+                Object.entries(this.baseTabs)
+                    .filter(([_, tab]) =>
+                        accesses.some((a) => a.accessCode === tab.accessCode && a.accessValue)
+                    )
+                    .map(([k, v]) => [k, { label: v.label, icon: v.icon }])
+            );
+        }
+
         this.setActiveRoute(this.router.url);
 
-        // Keep route in sync when navigating tabs
         this.sub = this.router.events
             .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
             .subscribe((event) => {
                 this.setActiveRoute(event.urlAfterRedirects);
             });
+
+        this.cdr.detectChanges();
     }
+
     private setActiveRoute(url: string): void {
-        // Find the longest registered tab route that the current URL starts with
         const matchingRoute = Object.keys(this.tabs)
             .filter((tabRoute) => url.startsWith(tabRoute))
-            .sort((a, b) => b.length - a.length)[0]; // Sort descending by length to prefer '/booking/admin/assign' over '/booking'
-
-        // If a match is found, use the base tab route; otherwise, use the full URL.
+            .sort((a, b) => b.length - a.length)[0];
         this.activeRoute = matchingRoute || url;
     }
 

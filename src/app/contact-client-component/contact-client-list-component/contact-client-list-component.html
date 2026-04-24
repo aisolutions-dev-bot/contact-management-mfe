@@ -15,7 +15,7 @@
       <ng-template #body let-rowData let-columns="columns">
         <tr
           class="clickable-row"
-          (contextmenu)="onContextMenu($event, rowData); contextMenu.toggle($event)"
+          (contextmenu)="onContextMenu($event, rowData); contextMenuItems().length > 0 && contextMenu.toggle($event)"
           #contextMenuTrigger
         >
           @for (col of columns; track col.field) {
