@@ -37,6 +37,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 })
 export class ContactStaffListComponent implements OnInit, OnChanges {
     @Input({ required: true }) filter!: Record<string, any>;
+    @Input() canEdit = false;
+    @Input() canSecurity = false;
     @Output() filterChange = new EventEmitter<Record<string, any>>();
 
     private router = inject(Router);
@@ -72,25 +74,30 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         const selected = this.selectedRowData();
         if (!selected) return [];
 
-        return [
-        {
-            label: 'Edit Staff',
-            icon: 'pi pi-fw pi-file-edit',
-            command: () => this.navigateToStaffEdit(selected),
-        },
-        {
-            label: 'Security',
-            icon: 'pi pi-fw pi-shield',
-            command: () => this.navigateToSecurity(selected),
-        },
-        {
-            separator: true
-        },
-        {
-            label: 'Cancel',
-            icon: 'pi pi-fw pi-times'
-        },
-    ]
+        const items: any[] = [];
+
+        if (this.canEdit) {
+            items.push({
+                label: 'Edit Staff',
+                icon: 'pi pi-fw pi-file-edit',
+                command: () => this.navigateToStaffEdit(selected),
+            });
+        }
+
+        if (this.canSecurity) {
+            items.push({
+                label: 'Security',
+                icon: 'pi pi-fw pi-shield',
+                command: () => this.navigateToSecurity(selected),
+            });
+        }
+
+        if (items.length === 0) return [];
+
+        items.push({ separator: true });
+        items.push({ label: 'Cancel', icon: 'pi pi-fw pi-times' });
+
+        return items;
     });
 
     ngOnInit() {

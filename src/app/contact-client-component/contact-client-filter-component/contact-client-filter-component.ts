@@ -67,6 +67,11 @@ export class ContactClientFilterComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadDropdowns();
+        const current = this.filter();
+        if (current && Object.keys(current).length > 0) {
+            this.form.patchValue(current, { emitEvent: false });
+            this.localFilter.set(current);
+        }
     }
 
     private loadDropdowns(): void {
