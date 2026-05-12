@@ -18,7 +18,6 @@ import { IAuthService } from '../../models/auth';
     TagModule,
     DividerModule,
     ProgressSpinnerModule,
-    RouterLink,
   ],
   templateUrl: './contact-staff-view-component.html',
   styleUrls: ['./contact-staff-view-component.scss'],
