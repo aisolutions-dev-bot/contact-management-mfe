@@ -4,6 +4,7 @@ import {
   computed,
   EventEmitter,
   inject,
+  Inject,
   Input,
   OnChanges,
   OnInit,
@@ -20,7 +21,7 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ContactTableComponent } from '../../components/table-component/table-component';
-import { ContactStaffList, LoadingState, TableColumn } from '../../models/contact';
+import { ContactStaffList, IAppMessageService, LoadingState, TableColumn } from '../../models/contact';
 import { ContactStaffService } from '../services/contact-staff-service';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
@@ -52,6 +53,10 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     private router = inject(Router);
     cdr = inject(ChangeDetectorRef);
     private staffService = inject(ContactStaffService);
+
+    constructor(
+        @Inject('MESSAGING_SERVICE') private messageService: IAppMessageService
+    ) {}
 
     LoadingState = LoadingState;
     loadingState = signal<LoadingState>(LoadingState.Loading);
@@ -203,6 +208,10 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         this.showStatusDialog.set(true);
     }
 
+    private getStatusLabel(status: string): string {
+        return this.statusOptions.find(o => o.value === status)?.label ?? status;
+    }
+
     closeStatusDialog(): void {
         this.showStatusDialog.set(false);
         this.statusDialogStaff.set(null);
@@ -218,12 +227,14 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         this.staffService.updateStaffStatus(staff.uniqId, newStatus).subscribe({
             next: () => {
                 this.savingStatus.set(false);
+                this.messageService.showSuccess('Success', `Status updated to ${this.getStatusLabel(newStatus)}`);
                 this.closeStatusDialog();
                 this.load();
             },
             error: (err) => {
                 this.savingStatus.set(false);
-                // error handled silently — dialog stays open
+                const msg = err?.error?.message || 'Failed to update status. Please try again.';
+                this.messageService.showError('Error', msg);
             }
         });
     }
