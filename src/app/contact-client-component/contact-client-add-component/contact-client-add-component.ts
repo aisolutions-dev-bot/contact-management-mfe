@@ -289,5 +289,4 @@ export class ContactClientAddComponent implements OnInit {
     }
 
     //#endregion 
-
 }
