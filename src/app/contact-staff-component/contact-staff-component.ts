@@ -23,17 +23,19 @@ import { IAuthService } from '../models/auth';
 })
 export class ContactStaffComponent implements OnInit {
     private readonly MODULE_ID = 'mod03';
-    readonly ADD_ACCESS_CODE      = 'a0303.01';
-    readonly EDIT_ACCESS_CODE     = 'a0303.02';
-    readonly DELETE_ACCESS_CODE   = 'a0303.03';
-    readonly SECURITY_ACCESS_CODE = 'a0303.04';
-    readonly IMPORT_ACCESS_CODE   = 'a0303.05';
+    readonly ADD_ACCESS_CODE           = 'a0303.01';
+    readonly EDIT_ACCESS_CODE          = 'a0303.02';
+    readonly DELETE_ACCESS_CODE        = 'a0303.03';
+    readonly SECURITY_ACCESS_CODE      = 'a0303.04';
+    readonly IMPORT_ACCESS_CODE        = 'a0303.05';
+    readonly CHANGE_STATUS_ACCESS_CODE = 'a0303.06';
 
-    canAddStaff      = false;
-    canEditStaff     = false;
-    canDeleteStaff   = false;
-    canSecurityStaff = false;
-    canImportStaff   = false;
+    canAddStaff          = false;
+    canEditStaff         = false;
+    canDeleteStaff       = false;
+    canSecurityStaff     = false;
+    canImportStaff       = false;
+    canChangeStatusStaff = false;
 
     private cdr = inject(ChangeDetectorRef);
 
@@ -55,11 +57,12 @@ export class ContactStaffComponent implements OnInit {
         } catch { }
 
         const accesses = this.authService.groupAuthorityAccesses();
-        this.canAddStaff      = accesses.some((a) => a.accessCode === this.ADD_ACCESS_CODE      && a.accessValue);
-        this.canEditStaff     = accesses.some((a) => a.accessCode === this.EDIT_ACCESS_CODE     && a.accessValue);
-        this.canDeleteStaff   = accesses.some((a) => a.accessCode === this.DELETE_ACCESS_CODE   && a.accessValue);
-        this.canSecurityStaff = accesses.some((a) => a.accessCode === this.SECURITY_ACCESS_CODE && a.accessValue);
-        this.canImportStaff   = accesses.some((a) => a.accessCode === this.IMPORT_ACCESS_CODE   && a.accessValue);
+        this.canAddStaff          = accesses.some((a) => a.accessCode === this.ADD_ACCESS_CODE           && a.accessValue);
+        this.canEditStaff         = accesses.some((a) => a.accessCode === this.EDIT_ACCESS_CODE          && a.accessValue);
+        this.canDeleteStaff       = accesses.some((a) => a.accessCode === this.DELETE_ACCESS_CODE        && a.accessValue);
+        this.canSecurityStaff     = accesses.some((a) => a.accessCode === this.SECURITY_ACCESS_CODE      && a.accessValue);
+        this.canImportStaff       = accesses.some((a) => a.accessCode === this.IMPORT_ACCESS_CODE        && a.accessValue);
+        this.canChangeStatusStaff = accesses.some((a) => a.accessCode === this.CHANGE_STATUS_ACCESS_CODE && a.accessValue);
         this.cdr.markForCheck();
     }
 

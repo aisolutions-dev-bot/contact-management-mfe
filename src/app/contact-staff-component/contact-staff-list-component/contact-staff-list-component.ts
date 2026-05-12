@@ -11,9 +11,11 @@ import {
   signal,
   SimpleChanges,
 } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ContextMenuModule } from 'primeng/contextmenu';
+import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ContactTableComponent } from '../../components/table-component/table-component';
@@ -25,12 +27,15 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
     selector: 'app-contact-staff-list',
     standalone: true,
     imports: [
-      ReactiveFormsModule, 
+      ReactiveFormsModule,
+      FormsModule,
       ContactTableComponent, 
       ProgressSpinnerModule,
       TableModule, 
       TagModule, 
-      ContextMenuModule
+      ContextMenuModule,
+      DialogModule,
+      SelectModule,
     ],
     templateUrl: './contact-staff-list-component.html',
     styleUrls: ['./contact-staff-list-component.scss'],
@@ -39,6 +44,7 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     @Input({ required: true }) filter!: Record<string, any>;
     @Input() canEdit = false;
     @Input() canSecurity = false;
+    @Input() canChangeStatus = false;
     @Output() filterChange = new EventEmitter<Record<string, any>>();
 
     private router = inject(Router);
@@ -50,6 +56,18 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     staffs = signal<ContactStaffList[]>([]);
     selectedRowData = signal<ContactStaffList | null>(null);
 
+    // Status change dialog
+    showStatusDialog = signal<boolean>(false);
+    statusDialogStaff = signal<ContactStaffList | null>(null);
+    selectedNewStatus = signal<string>('');
+    savingStatus = signal<boolean>(false);
+
+    readonly statusOptions = [
+      { label: 'Open', value: 'O' },
+      { label: 'Resigned', value: 'R' },
+      { label: 'Terminated', value: 'T' },
+    ];
+
     columns = signal<TableColumn[]>([
         { field: 'staffId', header: 'Staff ID' },
         { field: 'staffName', header: 'Staff Name' },
@@ -59,15 +77,16 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         { field: 'telMobile', header: 'Phone' },
         { field: 'emailCompany', header: 'Email' },
         { field: 'dateJoin', header: 'Join Date', formatter: this.formatDate },
-        // { 
-        //   field: 'status', 
-        //   header: 'Status', 
-        //   type: 'tag', 
-        //   tagConfig: {
-        //     O: { label: 'ACTIVE', severity: 'success ' },
-        //     R: { label: 'INACTIVE', severity: 'warn' },
-        //   }
-        // },
+        {
+          field: 'status',
+          header: 'Status',
+          type: 'tag',
+          tagConfig: {
+            O: { label: 'Open', severity: 'success' },
+            R: { label: 'Resigned', severity: 'warn' },
+            T: { label: 'Terminated', severity: 'danger' },
+          }
+        },
     ]);
 
     contextMenuItems = computed(() => {
@@ -89,6 +108,14 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
                 label: 'Security',
                 icon: 'pi pi-fw pi-shield',
                 command: () => this.navigateToSecurity(selected),
+            });
+        }
+
+        if (this.canChangeStatus) {
+            items.push({
+                label: 'Change Status',
+                icon: 'pi pi-fw pi-refresh',
+                command: () => this.openStatusDialog(selected),
             });
         }
 
@@ -166,5 +193,36 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         if (!staff) return;
 
         this.router.navigate(['/contact/staff/security', staff.uniqId]);
+    }
+
+    openStatusDialog(staff: ContactStaffList): void {
+        this.statusDialogStaff.set(staff);
+        this.selectedNewStatus.set(staff.status || '');
+        this.showStatusDialog.set(true);
+    }
+
+    closeStatusDialog(): void {
+        this.showStatusDialog.set(false);
+        this.statusDialogStaff.set(null);
+        this.selectedNewStatus.set('');
+    }
+
+    confirmStatusChange(): void {
+        const staff = this.statusDialogStaff();
+        const newStatus = this.selectedNewStatus();
+        if (!staff || !newStatus) return;
+
+        this.savingStatus.set(true);
+        this.staffService.updateStaffStatus(staff.uniqId, newStatus).subscribe({
+            next: () => {
+                this.savingStatus.set(false);
+                this.closeStatusDialog();
+                this.load();
+            },
+            error: (err) => {
+                this.savingStatus.set(false);
+                // error handled silently — dialog stays open
+            }
+        });
     }
 }

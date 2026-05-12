@@ -64,6 +64,10 @@ export class ContactStaffService {
         );
     }
 
+    updateStaffStatus(uniqId: number, status: string): Observable<any> {
+        return this.http.patch(`${this.baseUrl}/${uniqId}/status`, { status });
+    }
+
     /**
      * Get specific dropdowns by type
      * Use when only certain dropdowns are needed

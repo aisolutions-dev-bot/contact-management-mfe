@@ -51,4 +51,40 @@
   } @else if (loadingState() === LoadingState.Error) {
     <p>Something went wrong.</p>
   }
+
+  <p-dialog
+    header="Change Status"
+    [modal]="true"
+    [visible]="showStatusDialog()"
+    (visibleChange)="!$event && closeStatusDialog()"
+    [style]="{ width: '380px' }"
+    [closable]="true"
+  >
+    @if (statusDialogStaff()) {
+      <div style="display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0;">
+        <div>
+          <span style="font-weight: 600;">{{ statusDialogStaff()!.staffName }}</span>
+          <span style="color: var(--text-color-secondary); margin-left: 0.5rem;">({{ statusDialogStaff()!.staffId }})</span>
+        </div>
+        <p-select
+          [options]="statusOptions"
+          [ngModel]="selectedNewStatus()"
+          (ngModelChange)="selectedNewStatus.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select status"
+          [style]="{ width: '100%' }"
+        />
+      </div>
+    }
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closeStatusDialog()" />
+      <p-button
+        label="Save"
+        [loading]="savingStatus()"
+        [disabled]="!selectedNewStatus()"
+        (onClick)="confirmStatusChange()"
+      />
+    </ng-template>
+  </p-dialog>
 </div>

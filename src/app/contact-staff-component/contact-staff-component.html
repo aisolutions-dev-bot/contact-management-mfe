@@ -29,6 +29,7 @@
     [filter]="filter()"
     [canEdit]="canEditStaff"
     [canSecurity]="canSecurityStaff"
+    [canChangeStatus]="canChangeStatusStaff"
     (filterChange)="filter.set($event)"
   ></app-contact-staff-list>
 </div>

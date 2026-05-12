@@ -40,8 +40,9 @@ export class ContactStaffFilterComponent implements OnInit {
     @Output() applied = new EventEmitter<void>();
 
     statusOpts = signal<DropdownOption[]>([
-        { label: 'Active', value: 'ACTIVE' },
-        { label: 'All Staff', value: '' }
+        { label: 'Open', value: 'O' },
+        { label: 'Resigned', value: 'R' },
+        { label: 'Terminated', value: 'T' },
     ]);
     staffOpts = signal<DropdownOption[]>([]);
 
