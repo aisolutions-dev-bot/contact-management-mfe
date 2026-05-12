@@ -39,7 +39,9 @@ export interface ContactStaffList {
     roles: string;
     emailCompany: string;
     telMobile: string;
-    status: string;  
+    status: string;
+    formType?: string;
+    skillSet?: string;
 }
 
 export interface ImportStaffRow {

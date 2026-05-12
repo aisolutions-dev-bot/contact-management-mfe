@@ -37,7 +37,7 @@ export class ContactStaffViewComponent implements OnInit {
   staff = signal<ContactStaffList | null>(null);
   canEdit = false;
 
-  readonly STATUS_TAG: Record<string, { label: string; severity: string }> = {
+  readonly STATUS_TAG: Record<string, { label: string; severity: 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' }> = {
     O: { label: 'Open',       severity: 'success' },
     R: { label: 'Resigned',   severity: 'warn' },
     T: { label: 'Terminated', severity: 'danger' },
