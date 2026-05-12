@@ -15,6 +15,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ContextMenuModule } from 'primeng/contextmenu';
 import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -31,6 +32,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
       FormsModule,
       ContactTableComponent, 
       ProgressSpinnerModule,
+      ButtonModule,
       TableModule, 
       TagModule, 
       ContextMenuModule,
