@@ -1,0 +1,80 @@
+<div class="staff-view-wrapper">
+
+  @if (loadingState() === LoadingState.Loading) {
+    <div class="spinner-wrapper">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+    </div>
+  }
+
+  @else if (loadingState() === LoadingState.Error) {
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>Failed to load staff record.</span>
+      <p-button label="Back" icon="pi pi-arrow-left" (onClick)="goBack()" severity="secondary" [outlined]="true" />
+    </div>
+  }
+
+  @else if (staff(); as s) {
+
+    <!-- Toolbar -->
+    <div class="detail-toolbar">
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" (onClick)="goBack()" />
+      <div class="toolbar-right">
+        @if (canEdit) {
+          <p-button icon="pi pi-pencil" label="Edit" severity="primary" (onClick)="goEdit()" />
+        }
+      </div>
+    </div>
+
+    <!-- Header Card -->
+    <p-card styleClass="detail-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <i class="pi pi-user"></i>
+            <span><strong>{{ s.staffId }}</strong> — {{ s.staffName }}</span>
+          </div>
+          <p-tag
+            [value]="STATUS_TAG[s.status]?.label || s.status"
+            [severity]="STATUS_TAG[s.status]?.severity"
+          />
+        </div>
+      </ng-template>
+
+      <!-- Section: Personal -->
+      <div class="section-title"><i class="pi pi-id-card"></i> Personal Information</div>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Staff ID</span><span class="value">{{ s.staffId }}</span></div>
+        <div class="detail-field"><span class="label">Full Name</span><span class="value">{{ s.staffName }}</span></div>
+        <div class="detail-field"><span class="label">NRIC</span><span class="value">{{ s.nric || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Mobile</span><span class="value">{{ s.telMobile || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Email</span><span class="value">{{ s.emailCompany || '—' }}</span></div>
+      </div>
+
+      <p-divider />
+
+      <!-- Section: Employment -->
+      <div class="section-title"><i class="pi pi-briefcase"></i> Employment</div>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Department</span><span class="value">{{ s.departmentId || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Join Date</span><span class="value">{{ fmtDate(s.dateJoin) }}</span></div>
+        <div class="detail-field"><span class="label">Status</span>
+          <span class="value">
+            <p-tag [value]="STATUS_TAG[s.status]?.label || s.status" [severity]="STATUS_TAG[s.status]?.severity" />
+          </span>
+        </div>
+        <div class="detail-field"><span class="label">Roles</span><span class="value">{{ s.roles || '—' }}</span></div>
+      </div>
+
+    </p-card>
+
+    <!-- Audit trail -->
+    <p-card styleClass="detail-card audit-card">
+      <div class="audit-row">
+        <span><strong>Staff ID:</strong> {{ s.staffId }}</span>
+        <span><strong>Status:</strong> {{ STATUS_TAG[s.status]?.label || s.status }}</span>
+      </div>
+    </p-card>
+
+  }
+</div>

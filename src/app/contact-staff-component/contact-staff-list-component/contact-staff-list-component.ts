@@ -102,14 +102,6 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
 
         const items: any[] = [];
 
-        if (this.canEdit) {
-            items.push({
-                label: 'Edit Staff',
-                icon: 'pi pi-fw pi-file-edit',
-                command: () => this.navigateToStaffEdit(selected),
-            });
-        }
-
         if (this.canSecurity) {
             items.push({
                 label: 'Security',
@@ -188,6 +180,10 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     onContextMenu(event: MouseEvent, rowData: ContactStaffList): void {
         event.preventDefault();
         this.selectedRowData.set(rowData);
+    }
+
+    navigateToStaffView(staff: ContactStaffList): void {
+        this.router.navigate(['/contact/staff/view', staff.uniqId]);
     }
 
     navigateToStaffEdit(staff: ContactStaffList | null): void {

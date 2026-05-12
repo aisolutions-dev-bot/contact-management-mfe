@@ -19,6 +19,8 @@ module.exports = withModuleFederationPlugin({
       './src/app/contact-staff-component/contact-staff-edit-component/contact-staff-edit-component.ts',
     './ContactStaffSecurityComponent': 
       './src/app/contact-staff-component/contact-staff-security-component/contact-staff-security-component.ts',
+    './ContactStaffViewComponent':
+      './src/app/contact-staff-component/contact-staff-view-component/contact-staff-view-component.ts',
     './ContactClientComponent': 
       './src/app/contact-client-component/contact-client-component.ts',
     './ContactClientAddComponent': 
