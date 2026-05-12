@@ -111,10 +111,7 @@ export class ContactStaffFilterComponent implements OnInit {
         const cleaned = Object.fromEntries(
             Object.entries(raw)
                 .map(([k, v]) => [k, this.formatDate(v)])
-                .filter(([k, v]) => {
-                    if (k === 'status') return true;
-                    return v !== null && v !== undefined && v !== '';
-                }),
+                .filter(([k, v]) => v !== null && v !== undefined && v !== '')
             );
 
         this.filter.set(cleaned);
