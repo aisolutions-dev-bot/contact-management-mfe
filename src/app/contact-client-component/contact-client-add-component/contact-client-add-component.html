@@ -1,27 +1,52 @@
 <div class="contact-client-add-wrapper">
-    <div class="actions">
-        <p-button
-            icon="pi pi-arrow-left"
-            label="Back"
-            severity="secondary"
-            routerLink="/contact/client"
-        ></p-button>
-    </div>
 
-    @if (loadingState() === LoadingState.Loading) {
-      <div class="spinner-wrapper">
-        <p-progressSpinner strokeWidth="4" fill="transparent" />
+  @if (saving()) {
+    <div class="saving-overlay">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+      <span>Saving…</span>
+    </div>
+  }
+
+  <div class="page-toolbar">
+    <div class="toolbar-left">
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" routerLink="/contact/client" />
+      <h2 class="page-title"><i class="pi pi-building"></i> New Client</h2>
+    </div>
+  </div>
+
+  @if (loadingState() === LoadingState.Loading) {
+    <div class="spinner-wrapper">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+    </div>
+  } @else if (loadingState() === LoadingState.Success) {
+
+    <p-card styleClass="form-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <i class="pi pi-building"></i>
+            <span>Client Details</span>
+          </div>
+        </div>
+      </ng-template>
+      <div class="form-section">
+        <remote-component
+          [remoteEntry]="uiMfeUrl"
+          [exposedModule]="'./Form'"
+          [exportName]="'FormComponent'"
+          [inputs]="{
+            config: formConfig(),
+            loading: saving()
+          }"
+          (outputs)="onRemoteOutput($event)"
+        ></remote-component>
       </div>
-    } @else if (loadingState() === LoadingState.Success) {
-      <remote-component
-      [remoteEntry]="uiMfeUrl"
-      [exposedModule]="'./Form'"
-      [exportName]="'FormComponent'"
-      [inputs]="{
-          config: formConfig(),
-          loading: saving(),
-      }"
-      (outputs)="onRemoteOutput($event)"
-      ></remote-component>
-    }
+    </p-card>
+
+  } @else if (loadingState() === LoadingState.Error) {
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>Something went wrong. Please try again.</span>
+    </div>
+  }
 </div>

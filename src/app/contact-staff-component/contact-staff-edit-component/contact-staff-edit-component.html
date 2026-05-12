@@ -1,54 +1,63 @@
 <div class="contact-staff-edit-wrapper">
-  <div class="actions">
-    <p-button
-      icon="pi pi-arrow-left"
-      label="Back"
-      severity="secondary"
-      routerLink="/contact/staff"
-    ></p-button>
+
+  @if (saving()) {
+    <div class="saving-overlay">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+      <span>Saving…</span>
+    </div>
+  }
+
+  <div class="page-toolbar">
+    <div class="toolbar-left">
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" routerLink="/contact/staff" />
+      <h2 class="page-title"><i class="pi pi-users"></i> Edit Staff</h2>
+    </div>
   </div>
 
   @if (loadingState() === LoadingState.Loading) {
-
     <div class="spinner-wrapper">
       <p-progressSpinner strokeWidth="4" fill="transparent" />
     </div>
-
   } @else if (loadingState() === LoadingState.Success) {
 
-    <!-- Spinner Overlay -->
-    @if (saving()) {
-      <div class="spinner-overlay">
-        <p-progressSpinner strokeWidth="4" fill="transparent" />
+    <p-card styleClass="form-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <i class="pi pi-users"></i>
+            <span>Staff Details</span>
+          </div>
+        </div>
+      </ng-template>
+      <div class="form-section">
+        <remote-component
+          [remoteEntry]="uiMfeUrl"
+          [exposedModule]="'./Form'"
+          [exportName]="'FormComponent'"
+          [externalPatch]="externalPatch()"
+          [inputs]="{
+            config: formConfig(),
+            loading: saving(),
+            fieldErrors: fieldErrors(),
+            triggerSubmit: triggerSubmit()
+          }"
+          (outputs)="onRemoteOutput($event)"
+        ></remote-component>
       </div>
-    }
+    </p-card>
 
-    <!-- Form Section -->
-    <remote-component
-      [remoteEntry]="uiMfeUrl"
-      [exposedModule]="'./Form'"
-      [exportName]="'FormComponent'"
-      [externalPatch]="externalPatch()"
-      [inputs]="{ 
-          config: formConfig(),
-          loading: saving(),
-          fieldErrors: fieldErrors(), 
-          triggerSubmit: triggerSubmit()
-      }"
-      (outputs)="onRemoteOutput($event)"
-    ></remote-component>
-
-    <!-- Floating Menu -->
-    <app-floating-action-bar 
-      [visible]="true" 
-      [loading]="saving()" 
-      [buttons]="actionButtons" 
+    <app-floating-action-bar
+      [visible]="true"
+      [loading]="saving()"
+      [buttons]="actionButtons"
       (cancel)="onCancel()"
       (save)="onSave()"
     ></app-floating-action-bar>
 
   } @else if (loadingState() === LoadingState.Error) {
-      <p>Something went wrong.</p>
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>Something went wrong. Please try again.</span>
+    </div>
   }
 </div>
-

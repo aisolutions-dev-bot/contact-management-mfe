@@ -2,6 +2,7 @@ import { FormConfig } from '@ai-solutions-ui/form-component';
 import { Component, Inject, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { environment } from '../../../environments/environment';
 import { RemoteComponent } from '../../components/remote-component';
 import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
@@ -17,6 +18,7 @@ import { ActionButton, FloatingActionBarComponent } from '../../components/float
     RemoteComponent,
     ProgressSpinnerModule,
     ButtonModule,
+    CardModule,
     RouterLink,
     FloatingActionBarComponent
   ],

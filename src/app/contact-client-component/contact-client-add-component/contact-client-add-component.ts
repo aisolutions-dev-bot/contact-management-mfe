@@ -6,6 +6,7 @@ import { ContactClientService } from '../services/contact-client-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
@@ -14,7 +15,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
   imports: [
     RemoteComponent, 
     ProgressSpinnerModule,
-    ButtonModule, 
+    ButtonModule,
+    CardModule,
     RouterLink
   ],
   templateUrl: './contact-client-add-component.html',

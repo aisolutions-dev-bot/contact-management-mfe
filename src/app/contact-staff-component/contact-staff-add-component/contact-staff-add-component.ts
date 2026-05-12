@@ -6,6 +6,7 @@ import { ContactStaffService } from '../services/contact-staff-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { Validators } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ActionButton, FloatingActionBarComponent } from '../../components/floating-action-bar/floating-action-bar-component';
@@ -17,6 +18,7 @@ import { ActionButton, FloatingActionBarComponent } from '../../components/float
     RemoteComponent,
     ProgressSpinnerModule,
     ButtonModule,
+    CardModule,
     RouterLink,
     FloatingActionBarComponent
   ],

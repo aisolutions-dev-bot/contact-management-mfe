@@ -1,24 +1,115 @@
+// ─── Entry Animation ─────────────────────────────────────
+$ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .contact-staff-list-wrapper {
   display: flex;
   gap: 1rem;
   flex-direction: column;
 }
 
+// ─── Card ─────────────────────────────────────────────────
+.card {
+  background: var(--card-bg, var(--surface-card));
+  border: 1px solid var(--card-border, var(--surface-border));
+  border-radius: 12px;
+  padding: 0.85rem;
+  overflow: hidden;
+  animation: slide-up 0.45s $ease both;
+}
+
+@media (min-width: 720px)  { .card { padding: 1rem 1.25rem; } }
+@media (min-width: 1440px) { .card { padding: 1.25rem 1.5rem; } }
+
+// ─── Empty State ──────────────────────────────────────────
+.empty-state-container {
+  animation: slide-up 0.45s $ease both;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 220px;
+  text-align: center;
+  padding: 2.5rem;
+
+  i  { font-size: 4rem; color: #ccc; }
+  h3 { margin: 0.5rem 0 0; font-size: 1.05rem; font-weight: 600; color: var(--text-color); }
+  p  { margin: 0; font-size: 0.88rem; color: var(--text-color-secondary); max-width: 360px; }
+}
+
 .spinner-wrapper {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    height: 30vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 30vh;
 }
 
 .spinner-wrapper::before {
-    content: '';
-    flex-grow: 1;
+  content: '';
+  flex-grow: 1;
 }
 
 :host ::ng-deep .p-progressspinner-circle {
-    stroke: var(--p-primary-400) !important;
+  stroke: var(--p-primary-400) !important;
+}
+
+// ============================================================
+// Actions Column (three-dot menu)
+// ============================================================
+
+::ng-deep .actions-column {
+  width: 3.5rem !important;
+  min-width: 3.5rem !important;
+  text-align: center !important;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface-card) !important;
+
+  .p-button.p-button-text {
+    width: 28px !important;
+    height: 28px !important;
+    border: 0.5px solid var(--surface-border) !important;
+    border-radius: 10px !important;
+    background: var(--surface-card) !important;
+    color: var(--text-color-secondary) !important;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--surface-hover) !important;
+      border-color: var(--surface-400) !important;
+      color: var(--text-color) !important;
+    }
+    &.menu-active {
+      background: var(--surface-hover) !important;
+      border-color: var(--surface-400) !important;
+      color: var(--text-color) !important;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+    }
+  }
+}
+
+::ng-deep tr:hover .actions-column {
+  background: #f4f7fb !important;
+
+  .p-button.p-button-text {
+    background: #f4f7fb !important;
+  }
 }
 
 // ============================================================
@@ -30,7 +121,6 @@
   transition: transform 0.12s ease, background-color 0.12s ease, color 0.12s ease;
   transform-origin: center;
 
-  /* Hover - lift with shadow and color change */
   &:hover {
     background-color: #f4f7fb !important;
     transform: translateY(-2px);
@@ -40,18 +130,25 @@
     }
   }
 
-  /* Active/press - push back down */
   &:active {
     background-color: #e9f0fb !important;
     transform: translateY(0);
   }
 
-  /* Keyboard focus */
   &:focus,
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(11, 109, 246, 0.12);
     background-color: #eef6ff !important;
   }
 }
 
+::ng-deep {
+  .selected-row {
+    background-color: #e3f2fd !important;
+    border-left: 4px solid #2196F3 !important;
+
+    &:hover {
+      background-color: #bbdefb !important;
+    }
+  }
+}

@@ -1,44 +1,54 @@
-<div class="contact-client-list-wrapper">  
+<div class="contact-client-list-wrapper">
   @if (loadingState() === LoadingState.Loading) {
     <div class="spinner-wrapper">
       <p-progressSpinner strokeWidth="4" fill="transparent" />
     </div>
   } @else if (loadingState() === LoadingState.Success) {
-    <contact-table-component
-      [value]="clients()"
-      [columns]="columns()"
-      styleClass=""
-      [tableStyle]="{ 'min-width': '60rem' }"
-      [scrollable]="true"
-
-    >
-      <ng-template #body let-rowData let-columns="columns">
-        <tr
-          class="clickable-row"
-          (contextmenu)="onContextMenu($event, rowData); contextMenuItems().length > 0 && contextMenu.toggle($event)"
-          #contextMenuTrigger
-        >
-          @for (col of columns; track col.field) {
-            <td>
+    <div class="card">
+      <contact-table-component
+        [value]="clients()"
+        [columns]="columns()"
+        styleClass=""
+        [tableStyle]="{ 'min-width': '60rem' }"
+        [scrollable]="true"
+      >
+        <ng-template #body let-rowData let-columns="columns">
+          <tr
+            class="clickable-row"
+            (contextmenu)="onContextMenu($event, rowData); contextMenuItems().length > 0 && contextMenu.toggle($event)"
+            #contextMenuTrigger
+          >
+            @for (col of columns; track col.field) {
               @if (col.type === 'tag') {
-                <p-tag 
-                  [value]="col.tagConfig?.[rowData[col.field]]?.label || rowData[col.field]" 
-                  [severity]="col.tagConfig?.[rowData[col.field]]?.severity">
-                </p-tag>
+                <td>
+                  <p-tag
+                    [value]="col.tagConfig?.[rowData[col.field]]?.label || rowData[col.field]"
+                    [severity]="col.tagConfig?.[rowData[col.field]]?.severity">
+                  </p-tag>
+                </td>
+              } @else if (col.formatter) {
+                <td>{{ col.formatter(rowData[col.field]) }}</td>
+              } @else {
+                <td>{{ rowData[col.field] }}</td>
               }
-              @else if (col.formatter) {
-                {{ col.formatter(rowData[col.field]) }}
-              } @else{
-                {{ rowData[col.field] }}
-              }
-            </td>
-          }
-        </tr>
-      </ng-template>
-    </contact-table-component>
+            }
+          </tr>
+        </ng-template>
+      </contact-table-component>
+    </div>
+
+    @if (clients().length === 0) {
+      <div class="empty-state-container">
+        <div class="empty-state">
+          <i class="pi pi-building" style="font-size: 4rem; color: #ccc;"></i>
+          <h3>No Clients Found</h3>
+          <p>Try adjusting your filters or add a new client.</p>
+        </div>
+      </div>
+    }
 
     <p-contextMenu #contextMenu [model]="contextMenuItems()"></p-contextMenu>
-    } @else if (loadingState() === LoadingState.Error) {
-      <p>Something went wrong.</p>
-    }
+  } @else if (loadingState() === LoadingState.Error) {
+    <p>Something went wrong.</p>
+  }
 </div>
