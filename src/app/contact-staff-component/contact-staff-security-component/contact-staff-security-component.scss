@@ -93,7 +93,6 @@ $floating-bar-height: 55px;
   border: 1px solid var(--card-border, var(--surface-border));
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   animation: slide-up 0.45s $ease both;
-  overflow: hidden;
 
   .p-card {
     border-radius: 12px;

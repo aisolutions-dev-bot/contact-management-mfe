@@ -11,4 +11,5 @@ export const environment = {
   authUrl: 'http://localhost:8081/',
   authRealm: 'ai-solutions-realm',
   authClientId: 'ai-solutions-dev',
+  systemApiUrl: 'http://localhost:8085/api',
 };

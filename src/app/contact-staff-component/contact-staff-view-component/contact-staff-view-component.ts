@@ -35,6 +35,7 @@ export class ContactStaffViewComponent implements OnInit {
   loadingState = signal<LoadingState>(LoadingState.Loading);
   staff = signal<ContactStaffList | null>(null);
   canEdit = false;
+  resendingActivation = signal<boolean>(false);
 
   readonly STATUS_TAG: Record<string, { label: string; severity: 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' }> = {
     O: { label: 'Open',       severity: 'success' },
@@ -86,5 +87,22 @@ export class ContactStaffViewComponent implements OnInit {
   goEdit(): void {
     const s = this.staff();
     if (s) this.router.navigate(['/contact/staff/edit', s.uniqId]);
+  }
+
+  resendActivation(): void {
+    const s = this.staff();
+    if (!s) return;
+
+    this.resendingActivation.set(true);
+    this.staffService.resendActivation(s.uniqId).subscribe({
+      next: () => {
+        this.messageService.showSuccess('Success', 'Activation email has been resent');
+        this.resendingActivation.set(false);
+      },
+      error: (err) => {
+        this.messageService.showError('Error', err.error?.message || 'Failed to resend activation email');
+        this.resendingActivation.set(false);
+      }
+    });
   }
 }

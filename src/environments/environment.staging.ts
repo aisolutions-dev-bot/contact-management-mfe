@@ -7,4 +7,5 @@ export const environment = {
     uiMfeUrl: 'https://ai-solutions-ui.up.railway.app/remoteEntry.js',
     surveyUrl: 'https://customer-survey-production.up.railway.app/',
     projectMfeUrl: 'https://evalution-management.up.railway.app/remoteEntry.js',
+    systemApiUrl: 'https://system-management-bff-production.up.railway.app/api',
 };

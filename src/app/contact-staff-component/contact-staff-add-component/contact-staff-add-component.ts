@@ -1,15 +1,19 @@
-import { Component, Inject, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, Inject, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactStaffService } from '../services/contact-staff-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
+import { ActionButton, FloatingActionBarComponent } from '../../components/floating-action-bar/floating-action-bar-component';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { Validators } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ActionButton, FloatingActionBarComponent } from '../../components/floating-action-bar/floating-action-bar-component';
+import { SelectModule } from 'primeng/select';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-contact-staff-add',
@@ -20,7 +24,11 @@ import { ActionButton, FloatingActionBarComponent } from '../../components/float
     ButtonModule,
     CardModule,
     RouterLink,
-    FloatingActionBarComponent
+    SelectModule,
+    InputTextModule,
+    SelectButtonModule,
+    FormsModule,
+    FloatingActionBarComponent,
   ],
   templateUrl: './contact-staff-add-component.html',
   styleUrls: ['./contact-staff-add-component.scss'],
@@ -39,10 +47,26 @@ export class ContactStaffAddComponent implements OnInit {
 
   //#region SIGNALS - UI STATE MANAGEMENT
 
+  // Wizard step tracking
+  wizardStep = signal<number>(1);
+  actionButtons = computed<ActionButton[]>(() => {
+    if (this.wizardStep() === 1) {
+      return [
+        { label: 'Cancel', icon: 'pi pi-times', action: 'cancel', severity: 'secondary', outlined: true },
+        { label: 'Next', icon: 'pi pi-arrow-right', action: 'next', severity: 'primary' },
+      ];
+    }
+    return [
+      { label: 'Back', icon: 'pi pi-arrow-left', action: 'back', severity: 'secondary', outlined: true },
+      { label: 'Create', icon: 'pi pi-check', action: 'save', severity: 'primary' },
+    ];
+  });
+
   // Dropdown options
   departmentOpts = signal<DropdownOption[]>([]);
   formTypeOpts = signal<DropdownOption[]>([]);
   skillSetOpts = signal<DropdownOption[]>([]);
+  groupAuthorityOpts = signal<DropdownOption[]>([]);
 
   // UI loading states
   fieldErrors = signal<Record<string, any>>({});
@@ -53,28 +77,25 @@ export class ContactStaffAddComponent implements OnInit {
   // Configuration & Environment
   uiMfeUrl = environment.uiMfeUrl;
 
-  // Floating action bar buttons
-  actionButtons: ActionButton[] = [
-    {
-      label: 'Cancel',
-      icon: 'pi pi-times',
-      action: 'cancel',
-      severity: 'secondary',
-      outlined: true,
-    },
-    {
-      label: 'Create',
-      icon: 'pi pi-check',
-      action: 'save',
-      severity: 'primary',
-    },
-  ];
-
   // Track previous value for change detection
   private previousFormType: string = '';
 
   // Trigger form validation/submission
   triggerSubmit = signal<boolean>(false);
+
+  // Step 1 form model storage
+  private stepOneModel: Record<string, any> = {};
+
+  // Step 2 Security fields
+  loginId = signal<string>('');
+  loginIdAutoFilled = false;
+  password = signal<string>('password');
+  systemUser = signal<string>('Y');
+  groupAuthority = signal<string>('');
+  systemUserOptions = [
+    { label: 'Yes', value: 'Y' },
+    { label: 'No', value: 'N' },
+  ];
 
   //#endregion
 
@@ -192,12 +213,25 @@ export class ContactStaffAddComponent implements OnInit {
         this.updateFieldOptions('departmentId', data.departments || []);
 
         this.loadFormTypeDropdown().then(() => {
-          this.loadingState.set(LoadingState.Success);
+          this.loadGroupAuthorities();
         });
       },
       error: (err) => {
         this.messageService.showError('Error', 'Failed to load form data', err);
         this.loadingState.set(LoadingState.Error);
+      }
+    });
+  }
+
+  private loadGroupAuthorities(): void {
+    this.staffService.getGroupAuthorities().subscribe({
+      next: (data) => {
+        this.groupAuthorityOpts.set(data);
+        this.loadingState.set(LoadingState.Success);
+      },
+      error: () => {
+        this.groupAuthorityOpts.set([]);
+        this.loadingState.set(LoadingState.Success);
       }
     });
   }
@@ -262,10 +296,10 @@ export class ContactStaffAddComponent implements OnInit {
 
   private handleFormModelChange(model: Record<string, any>): void {
     this.fieldErrors.set({});
+    this.stepOneModel = model;
 
     const newFormType = model?.['formType'] ?? '';
 
-    // If formType changed, reload skillSet options
     if (newFormType !== this.previousFormType) {
       this.previousFormType = newFormType;
 
@@ -280,7 +314,6 @@ export class ContactStaffAddComponent implements OnInit {
   private handleFormSubmit(model: Record<string, any>): void {
     this.triggerSubmit.set(false);
 
-    // Run custom validation
     if (!this.validateForm(model)) {
       this.messageService.showWarn(
         'Validation',
@@ -288,21 +321,51 @@ export class ContactStaffAddComponent implements OnInit {
       );
       return;
     }
-    
-    this.addStaff(model);
+
+    // Save step 1 model and advance to step 2
+    this.stepOneModel = model;
+
+    if (this.systemUser() === 'Y' && !this.loginIdAutoFilled) {
+      this.loginId.set(model['staffId'] || '');
+      this.loginIdAutoFilled = true;
+    }
+
+    this.wizardStep.set(2);
   }
 
   //#endregion
 
-  //#region FLOATING ACTION BAR HANDLERS
+  //#region WIZARD NAVIGATION
+
+  onNext(): void {
+    this.triggerSubmit.set(true);
+  }
+
+  wizardBack(): void {
+    this.loginIdAutoFilled = false;
+    this.formConfigSignal.update((cfg) => ({
+      ...cfg,
+      model: { ...this.stepOneModel }
+    }));
+    this.wizardStep.set(1);
+  }
 
   onCancel(): void {
     this.router.navigate(['/contact/staff']);
   }
 
-  onSave(): void {
-    // Trigger form validation and submission
-    this.triggerSubmit.set(true);
+  onCreate(): void {
+    const mergedPayload = this.buildMergedPayload();
+    this.addStaff(mergedPayload);
+  }
+
+  onActionClicked(action: string): void {
+    switch (action) {
+      case 'cancel': this.onCancel(); break;
+      case 'next': this.onNext(); break;
+      case 'back': this.wizardBack(); break;
+      case 'save': this.onCreate(); break;
+    }
   }
 
   //#endregion
@@ -312,7 +375,6 @@ export class ContactStaffAddComponent implements OnInit {
   private validateForm(model: Record<string, any>): boolean {
     const errors: Record<string, string> = {};
 
-    // Email validation
     if (model['emailCompany']) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(model['emailCompany'])) {
@@ -320,7 +382,6 @@ export class ContactStaffAddComponent implements OnInit {
       }
     }
 
-    // Phone validation - flexible for MY/SG
     if (model['telMobile']) {
       const cleanedPhone = model['telMobile'].replace(/[\s\-\(\)]/g, '');
       const phoneRegex = /^[\+]?[0-9]{8,15}$/;
@@ -338,10 +399,8 @@ export class ContactStaffAddComponent implements OnInit {
 
   //#region FORM SUBMISSION & STAFF CREATION
 
-  private addStaff(model: Record<string, any>): void {
+  private addStaff(payload: Record<string, any>): void {
     this.saving.set(true);
-
-    const payload = this.buildPayload(model);
 
     this.staffService.createStaff(payload).subscribe({
       next: () => {
@@ -358,32 +417,43 @@ export class ContactStaffAddComponent implements OnInit {
     });
   }
 
-  private buildPayload(model: Record<string, any>): Record<string, any> {
+  private buildMergedPayload(): Record<string, any> {
     const dateFields = ['dateJoin'];
     const uppercaseFields = ['staffId', 'staffName'];
 
-    const payload: Record<string, any> = {};
+    const step1Payload: Record<string, any> = {};
 
-    // Build payload from model
-    Object.entries(model).forEach(([key, value]) => {
+    Object.entries(this.stepOneModel).forEach(([key, value]) => {
       if (value === null || value === undefined) return;
 
       if (dateFields.includes(key)) {
         if (value instanceof Date) {
-          payload[key] = this.convertDateToISOWithTimezone(value);
+          step1Payload[key] = this.convertDateToISOWithTimezone(value);
         } else {
-          payload[key] = value;
+          step1Payload[key] = value;
         }
       } else if (uppercaseFields.includes(key) && typeof value === 'string') {
-        payload[key] = value.toUpperCase();
+        step1Payload[key] = value.toUpperCase();
+      } else {
+        step1Payload[key] = value;
       }
-      else {
-        payload[key] = value;
-      }
-
     });
 
-    return payload;
+    const securityFields: Record<string, any> = {
+      systemUser: this.systemUser(),
+      secGroupAuthority: this.groupAuthority(),
+    };
+
+    if (this.systemUser() === 'Y') {
+      securityFields['loginId'] = this.loginId();
+      securityFields['password'] = this.password();
+      securityFields['changePassword'] = 1;
+    }
+
+    return {
+      ...step1Payload,
+      ...securityFields,
+    };
   }
 
   //#endregion
@@ -412,6 +482,6 @@ export class ContactStaffAddComponent implements OnInit {
     return result;
   }
 
-  //#endregion 
+  //#endregion
 
 }

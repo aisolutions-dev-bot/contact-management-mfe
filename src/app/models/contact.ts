@@ -42,6 +42,14 @@ export interface ContactStaffList {
     status: string;
     formType?: string;
     skillSet?: string;
+    secGroupAuthority?: string;
+    loginId?: string;
+    systemUser?: string;
+    disablePassword?: number;
+    changePassword?: number;
+    tokenActivated?: string;
+    entryStaff?: string;
+    entryDate?: string;
 }
 
 export interface ImportStaffRow {

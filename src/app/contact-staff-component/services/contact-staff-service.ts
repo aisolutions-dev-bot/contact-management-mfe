@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   DropdownResponse,
@@ -85,6 +85,15 @@ export class ContactStaffService {
         return this.http.get<DropdownOption[]>(
             `${this.apiUrl}/v1/dropdowns/formtypes`
         );
+    }
+
+    getGroupAuthorities(): Observable<DropdownOption[]> {
+        const systemApiUrl = environment.systemApiUrl;
+        return this.http.get<DropdownOption[]>(`${systemApiUrl}/v1/dropdowns/group-authorities`);
+    }
+
+    resendActivation(id: number): Observable<any> {
+        return this.http.post(`${this.baseUrl}/${id}/resend-activation`, {});
     }
 
     getSkillSetsByFormType(formType: string): Observable<DropdownOption[]> {

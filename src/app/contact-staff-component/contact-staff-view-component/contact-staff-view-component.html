@@ -20,13 +20,23 @@
     <div class="detail-toolbar">
       <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" (onClick)="goBack()" />
       <div class="toolbar-right">
+        @if (s.systemUser === 'Y' && s.tokenActivated !== 'Y') {
+          <p-button
+            icon="pi pi-send"
+            label="Resend Activation"
+            severity="secondary"
+            [outlined]="true"
+            [loading]="resendingActivation()"
+            (onClick)="resendActivation()"
+          />
+        }
         @if (canEdit) {
           <p-button icon="pi pi-pencil" label="Edit" severity="primary" (onClick)="goEdit()" />
         }
       </div>
     </div>
 
-    <!-- Header Card -->
+    <!-- Main Card -->
     <p-card styleClass="detail-card">
       <ng-template pTemplate="header">
         <div class="card-header-bar">
@@ -41,7 +51,7 @@
         </div>
       </ng-template>
 
-      <!-- Section: Personal -->
+      <!-- Personal Information -->
       <div class="section-title"><i class="pi pi-id-card"></i> Personal Information</div>
       <div class="detail-grid">
         <div class="detail-field"><span class="label">Staff ID</span><span class="value">{{ s.staffId }}</span></div>
@@ -53,7 +63,7 @@
 
       <p-divider />
 
-      <!-- Section: Employment -->
+      <!-- Employment -->
       <div class="section-title"><i class="pi pi-briefcase"></i> Employment</div>
       <div class="detail-grid">
         <div class="detail-field"><span class="label">Department</span><span class="value">{{ s.departmentId || '—' }}</span></div>
@@ -63,16 +73,46 @@
             <p-tag [value]="STATUS_TAG[s.status]?.label || s.status" [severity]="STATUS_TAG[s.status]?.severity" />
           </span>
         </div>
-        <div class="detail-field"><span class="label">Roles</span><span class="value">{{ s.roles || '—' }}</span></div>
       </div>
 
       <p-divider />
 
-      <!-- Section: Professional -->
+      <!-- Professional Info -->
       <div class="section-title"><i class="pi pi-file"></i> Professional Info</div>
       <div class="detail-grid">
         <div class="detail-field"><span class="label">Form Type</span><span class="value">{{ s.formType || '—' }}</span></div>
         <div class="detail-field"><span class="label">Skill Set</span><span class="value">{{ s.skillSet || '—' }}</span></div>
+      </div>
+
+      <p-divider />
+
+      <!-- Security -->
+      <div class="section-title"><i class="pi pi-shield"></i> Security</div>
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="label">System User</span>
+          <span class="value">
+            @if (s.systemUser === 'Y') {
+              <p-tag value="Yes" severity="success" />
+            } @else {
+              <p-tag value="No" severity="secondary" />
+            }
+          </span>
+        </div>
+        @if (s.systemUser === 'Y') {
+          <div class="detail-field"><span class="label">Login ID</span><span class="value">{{ s.loginId || '—' }}</span></div>
+          <div class="detail-field"><span class="label">Group Authority</span><span class="value">{{ s.secGroupAuthority || '—' }}</span></div>
+          <div class="detail-field">
+            <span class="label">Account Status</span>
+            <span class="value">
+              @if (s.tokenActivated === 'Y') {
+                <p-tag value="Activated" severity="success" />
+              } @else {
+                <p-tag value="Pending Activation" severity="warn" />
+              }
+            </span>
+          </div>
+        }
       </div>
 
     </p-card>
@@ -80,8 +120,7 @@
     <!-- Audit trail -->
     <p-card styleClass="detail-card audit-card">
       <div class="audit-row">
-        <span><strong>Staff ID:</strong> {{ s.staffId }}</span>
-        <span><strong>Status:</strong> {{ STATUS_TAG[s.status]?.label || s.status }}</span>
+        <span><strong>Created by:</strong> {{ s.entryStaff || '—' }} on {{ fmtDate(s.entryDate) }}</span>
       </div>
     </p-card>
 

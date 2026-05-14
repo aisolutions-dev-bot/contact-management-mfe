@@ -27,7 +27,7 @@ import { ActionButton, FloatingActionBarComponent } from '../../components/float
 })
 export class ContactStaffSecurityComponent implements OnInit {
 
-  //#region INJECTED DEPENDECIES
+  //#region INJECTED DEPENDENCIES
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private staffService = inject(ContactStaffService);
@@ -40,40 +40,23 @@ export class ContactStaffSecurityComponent implements OnInit {
 
   //#region SIGNALS - UI STATE MANAGEMENT
 
-  // Dropdown options
-  departmentOpts = signal<DropdownOption[]>([]);
+  groupAuthorityOpts = signal<DropdownOption[]>([]);
 
-  // UI loading states
   uniqId = signal<number | null>(null);
   LoadingState = LoadingState;
   loadingState = signal<LoadingState>(LoadingState.Loading);
   saving = signal<boolean>(false);
 
-  // Configuration & Environment
   uiMfeUrl = environment.uiMfeUrl;
 
-  // Floating action bar buttons
   actionButtons: ActionButton[] = [
-    {
-      label: 'Cancel',
-      icon: 'pi pi-times',
-      action: 'cancel',
-      severity: 'secondary',
-      outlined: true,
-    },
-    {
-      label: 'Save',
-      icon: 'pi pi-check',
-      action: 'save',
-      severity: 'primary',
-    },
+    { label: 'Cancel', icon: 'pi pi-times', action: 'cancel', severity: 'secondary', outlined: true },
+    { label: 'Save',   icon: 'pi pi-check', action: 'save',   severity: 'primary' },
   ];
 
-  // Trigger form validation/submission
   triggerSubmit = signal<boolean>(false);
-
-  // Form model tracking
   private currentFormModel: Record<string, any> = {};
+  private previousSystemUser: boolean | null = null;
 
   //#endregion
 
@@ -91,9 +74,10 @@ export class ContactStaffSecurityComponent implements OnInit {
     {
       key: 'secGroupAuthority',
       label: 'User Authority',
-      type: 'text' as const,
+      type: 'select' as const,
       icon: 'pi-sitemap',
       colSpan: 6,
+      options: [],
     },
     {
       key: 'loginId',
@@ -102,22 +86,6 @@ export class ContactStaffSecurityComponent implements OnInit {
       icon: 'pi-user',
       colSpan: 6,
       validators: [Validators.required],
-    },
-    {
-      key: 'password',
-      label: 'New Password',
-      type: 'password' as const,
-      icon: 'pi pi-lock',
-      colSpan: 6,
-      hiddenWhen: () => true,
-    },
-    {
-      key: 'confirmPassword',
-      label: 'Confirm Password',
-      type: 'password' as const,
-      icon: 'pi pi-lock',
-      colSpan: 6,
-      hiddenWhen: () => true,
     },
     {
       key: 'systemUser',
@@ -148,12 +116,9 @@ export class ContactStaffSecurityComponent implements OnInit {
       staffName: null,
       secGroupAuthority: null,
       loginId: null,
-      password: null,
-      confirmPassword: null,
       systemUser: false,
       disablePassword: false,
       changePassword: false,
-
     },
     showButton: false,
   });
@@ -181,12 +146,21 @@ export class ContactStaffSecurityComponent implements OnInit {
 
   private loadInitialFormData(id: number): void {
     this.loadingState.set(LoadingState.Loading);
-    this.loadStaff(id);
+
+    this.staffService.getGroupAuthorities().subscribe({
+      next: (opts) => {
+        this.groupAuthorityOpts.set(opts);
+        this.updateFieldOptions('secGroupAuthority', opts);
+        this.loadStaff(id);
+      },
+      error: () => {
+        this.updateFieldOptions('secGroupAuthority', []);
+        this.loadStaff(id);
+      }
+    });
   }
 
   private loadStaff(id: number): void {
-    this.loadingState.set(LoadingState.Loading);
-
     this.staffService.getStaffById(id).subscribe({
       next: (staff) => {
         this.handleStaffLoaded(staff);
@@ -202,13 +176,17 @@ export class ContactStaffSecurityComponent implements OnInit {
   }
 
   private handleStaffLoaded(staff: Record<string, any>): void {
+    const isSystemUser = this.ynToBoolean(staff['systemUser']);
+
     const formData = {
       ...staff,
-      systemUser: this.ynToBoolean(staff['systemUser']),
+      systemUser: isSystemUser,
       disablePassword: this.bitToBoolean(staff['disablePassword']),
       changePassword: this.bitToBoolean(staff['changePassword']),
     };
 
+    this.updateSecurityFields(isSystemUser);
+    this.previousSystemUser = isSystemUser;
     this.setFormModel(formData);
     this.loadingState.set(LoadingState.Success);
   }
@@ -216,8 +194,28 @@ export class ContactStaffSecurityComponent implements OnInit {
   private setFormModel(staff: Record<string, any>): void {
     this.formConfigSignal.update(cfg => ({
       ...cfg,
-      title: 'Security',
       model: { ...staff }
+    }));
+  }
+
+  private updateSecurityFields(isSystemUser: boolean): void {
+    const conditionalKeys = ['loginId', 'disablePassword', 'changePassword'];
+    this.formConfigSignal.update(cfg => ({
+      ...cfg,
+      fields: cfg.fields.map(field =>
+        conditionalKeys.includes(field.key)
+          ? { ...field, hiddenWhen: () => !isSystemUser }
+          : field
+      )
+    }));
+  }
+
+  private updateFieldOptions(fieldKey: string, options: DropdownOption[]): void {
+    this.formConfigSignal.update(cfg => ({
+      ...cfg,
+      fields: cfg.fields.map(field =>
+        field.key === fieldKey ? { ...field, options } : field
+      )
     }));
   }
 
@@ -228,6 +226,12 @@ export class ContactStaffSecurityComponent implements OnInit {
   onRemoteOutput(event: Record<string, any>): void {
     if (event['modelChange']) {
       this.currentFormModel = event['modelChange'];
+
+      const isSystemUser = !!event['modelChange']['systemUser'];
+      if (this.previousSystemUser !== isSystemUser) {
+        this.previousSystemUser = isSystemUser;
+        this.updateSecurityFields(isSystemUser);
+      }
     }
 
     if (event['formSubmit']) {
@@ -237,10 +241,7 @@ export class ContactStaffSecurityComponent implements OnInit {
 
     if ('validationFailed' in event) {
       this.triggerSubmit.set(false);
-      this.messageService.showWarn(
-        'Validation',
-        'Please check the form for errors'
-      );
+      this.messageService.showWarn('Validation', 'Please check the form for errors');
     }
   }
 
@@ -253,34 +254,23 @@ export class ContactStaffSecurityComponent implements OnInit {
   }
 
   onSave(): void {
-    // Check if form has data
     if (Object.keys(this.currentFormModel).length === 0) {
-      this.messageService.showInfo(
-        'No Changes',
-        'There are no changes to save'
-      );
+      this.messageService.showInfo('No Changes', 'There are no changes to save');
       return;
     }
-
-    // Trigger form validation and submission
     this.triggerSubmit.set(true);
   }
 
   //#endregion
 
-  //#region FORM SUBMISSION & STAFF SECURITY UPDATE
+  //#region FORM SUBMISSION
 
   private editStaffSecurity(model: Record<string, any>): void {
     this.saving.set(true);
-    
+
     const id = this.uniqId();
     if (!id) {
       this.messageService.showError('Error', 'Invalid Staff ID');
-      return;
-    }
-
-    // Validate passwords
-    if (!this.validatePasswords(model)) {
       return;
     }
 
@@ -289,72 +279,23 @@ export class ContactStaffSecurityComponent implements OnInit {
     this.staffService.updateStaffSecurity(id, payload).subscribe({
       next: () => {
         this.messageService.showSuccess('Success', 'Security settings updated successfully!');
-        this.clearPasswordFields();
         this.saving.set(false);
         this.router.navigate(['/contact/staff/']);
       },
       error: (err) => {
-        this.messageService.showError(
-          'Error',
-          err.error?.message || 'Failed to update security settings'
-        );
+        this.messageService.showError('Error', err.error?.message || 'Failed to update security settings');
         this.saving.set(false);
       }
     });
   }
 
-  private validatePasswords(model: Record<string, any>): boolean {
-    const password = model['password'];
-    const confirmPassword = model['confirmPassword'];
-
-    // If password are filled
-    if (password || confirmPassword) {
-      if (password != confirmPassword) {
-        this.messageService.showError('Error', 'Passwords do not match');
-        return false;
-      }
-
-      if (password.length < 8) {
-        this.messageService.showError('Error', 'Password must be at least 8 characters');
-        return false;
-      }
-      // Optional
-      // const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-      // if (!strongPasswordRegex.test(password)) {
-      //     this.messageService.showError(
-      //     'Error', 
-      //     'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-      //     );
-      //     return false;
-      // }
-    }
-    return true;
-  }
-
   private buildPayload(model: Record<string, any>): Record<string, any> {
-    const payload: Record<string, any> = {
+    return {
       ...model,
       systemUser: model['systemUser'] ? 'Y' : 'N',
       disablePassword: model['disablePassword'] ? 1 : 0,
       changePassword: model['changePassword'] ? 1 : 0,
     };
-
-    // TODO: Add password when feature is ready
-    // if (model['password'] && model['password'].trim() !== '') {
-    //     payload['password'] = model['password'];
-    // }
-    return payload;
-  }
-
-  private clearPasswordFields(): void {
-    this.formConfigSignal.update(cfg => ({
-      ...cfg,
-      model: {
-        ...cfg.model,
-        password: '',
-        confirmPassword: '',
-      }
-    }));
   }
 
   //#endregion
@@ -366,9 +307,7 @@ export class ContactStaffSecurityComponent implements OnInit {
   }
 
   private bitToBoolean(value: number | boolean | null | undefined): boolean {
-    if (typeof value === 'boolean') {
-      return value;
-    }
+    if (typeof value === 'boolean') return value;
     return value === 1;
   }
 

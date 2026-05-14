@@ -10,7 +10,7 @@
   <div class="page-toolbar">
     <div class="toolbar-left">
       <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" routerLink="/contact/staff" />
-      <h2 class="page-title"><i class="pi pi-users"></i> New Staff</h2>
+      <h2 class="page-title"><i class="pi pi-user-plus"></i> New Staff</h2>
     </div>
   </div>
 
@@ -20,41 +20,129 @@
     </div>
   } @else if (loadingState() === LoadingState.Success) {
 
-    <p-card styleClass="form-card">
-      <ng-template pTemplate="header">
-        <div class="card-header-bar">
-          <div class="card-title">
-            <i class="pi pi-users"></i>
-            <span>Staff Details</span>
+    <!-- Wizard Header -->
+    <div class="wizard-header">
+      <span class="wizard-step-label">STEP {{ wizardStep() }} OF 2</span>
+      <h2 class="wizard-title">
+        @if (wizardStep() === 1) { Basic Details }
+        @if (wizardStep() === 2) { Security Features }
+      </h2>
+      <div class="wizard-progress">
+        <div class="wizard-progress-step" [class.active]="wizardStep() >= 1"></div>
+        <div class="wizard-progress-step" [class.active]="wizardStep() >= 2"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Basic Details -->
+    @if (wizardStep() === 1) {
+      <p-card styleClass="form-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-bar">
+            <div class="card-title">
+              <i class="pi pi-users"></i>
+              <span>Staff Details</span>
+            </div>
+          </div>
+        </ng-template>
+        <div class="form-section">
+          <remote-component
+            [remoteEntry]="uiMfeUrl"
+            [exposedModule]="'./Form'"
+            [exportName]="'FormComponent'"
+            [inputs]="{
+              config: formConfig(),
+              loading: false,
+              fieldErrors: fieldErrors(),
+              triggerSubmit: triggerSubmit()
+            }"
+            (outputs)="onRemoteOutput($event)"
+          ></remote-component>
+        </div>
+      </p-card>
+    }
+
+    <!-- Step 2: Security Features -->
+    @if (wizardStep() === 2) {
+      <p-card styleClass="form-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-bar">
+            <div class="card-title">
+              <i class="pi pi-shield"></i>
+              <span>Security Details</span>
+            </div>
+          </div>
+        </ng-template>
+        <div class="form-section">
+          <div class="security-fields">
+            <div class="sec-field">
+              <label class="sec-label">
+                <i class="pi pi-sitemap"></i>
+                <span>Group Authority</span>
+              </label>
+              <p-select
+                [options]="groupAuthorityOpts()"
+                [(ngModel)]="groupAuthority"
+                placeholder="Select Group Authority"
+                optionLabel="label"
+                optionValue="value"
+                [filter]="true"
+                filterPlaceholder="Search..."
+                appendTo="body"
+                class="w-full"
+              />
+            </div>
+            <div class="sec-field">
+              <label class="sec-label">
+                <i class="pi pi-toggle-on"></i>
+                <span>System User</span>
+              </label>
+              <p-selectButton
+                [options]="systemUserOptions"
+                [(ngModel)]="systemUser"
+              />
+            </div>
+            @if (systemUser() === 'Y') {
+              <div class="sec-field">
+                <label class="sec-label">
+                  <i class="pi pi-user"></i>
+                  <span>Login ID</span>
+                </label>
+                <input
+                  pInputText
+                  type="text"
+                  [(ngModel)]="loginId"
+                  placeholder="Enter login ID"
+                  class="w-full"
+                />
+              </div>
+              <div class="sec-field">
+                <label class="sec-label">
+                  <i class="pi pi-lock"></i>
+                  <span>Default Password</span>
+                </label>
+                <div class="password-display">
+                  <span class="password-value">password</span>
+                </div>
+              </div>
+              <div class="info-banner">
+                <i class="pi pi-info-circle"></i>
+                <span>Staff will be required to change password on first login</span>
+              </div>
+            }
           </div>
         </div>
-      </ng-template>
-      <div class="form-section">
-        <remote-component
-          [remoteEntry]="uiMfeUrl"
-          [exposedModule]="'./Form'"
-          [exportName]="'FormComponent'"
-          [inputs]="{
-            config: formConfig(),
-            loading: saving(),
-            fieldErrors: fieldErrors(),
-            triggerSubmit: triggerSubmit()
-          }"
-          (outputs)="onRemoteOutput($event)"
-        ></remote-component>
-      </div>
-    </p-card>
+      </p-card>
+    }
 
+    <!-- Floating Action Bar -->
     <app-floating-action-bar
       [visible]="true"
       [loading]="saving()"
-      [buttons]="actionButtons"
-      (cancel)="onCancel()"
-      (save)="onSave()"
+      [buttons]="actionButtons()"
+      (actionClicked)="onActionClicked($event)"
     ></app-floating-action-bar>
 
   } @else if (loadingState() === LoadingState.Error) {
-
     <div class="error-state">
       <i class="pi pi-exclamation-triangle"></i>
       <span>Something went wrong. Please try again.</span>

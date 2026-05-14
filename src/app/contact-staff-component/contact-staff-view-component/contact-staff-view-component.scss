@@ -116,6 +116,14 @@ $ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .audit-card { opacity: 0.85; }
+
+.audit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
 .audit-row {
   display: flex;
   flex-wrap: wrap;
