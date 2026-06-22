@@ -355,6 +355,20 @@ export class ContactStaffAddComponent implements OnInit {
   }
 
   onCreate(): void {
+    // Email is mandatory for system users (they receive the account activation link).
+    // The System User toggle lives on step 2, so validate here before creating.
+    if (this.systemUser() === 'Y') {
+      const email = this.stepOneModel['emailCompany'];
+      if (!email || !String(email).trim()) {
+        this.messageService.showWarn(
+          'Validation',
+          'Email is required when System User is set to Yes.'
+        );
+        this.wizardBack();
+        return;
+      }
+    }
+
     const mergedPayload = this.buildMergedPayload();
     this.addStaff(mergedPayload);
   }
