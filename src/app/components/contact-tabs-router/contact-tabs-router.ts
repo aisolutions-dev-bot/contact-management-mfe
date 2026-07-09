@@ -24,6 +24,10 @@ export class ContactTabsRouter implements OnInit, OnDestroy {
             label: 'Client Master',
             accessCode: 'a0301',
         },
+        '/contact/supplier': {
+          label: 'Supplier Master',
+          accessCode: 'a0302',
+      },
         '/contact/staff': {
             label: 'Staff Master',
             accessCode: 'a0303',

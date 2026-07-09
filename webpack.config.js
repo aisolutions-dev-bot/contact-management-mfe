@@ -29,6 +29,14 @@ module.exports = withModuleFederationPlugin({
       './src/app/contact-client-component/contact-client-edit-component/contact-client-edit-component.ts',
     './ContactClientViewComponent':
       './src/app/contact-client-component/contact-client-view-component/contact-client-view-component.ts',
+    './ContactSupplierComponent':
+      './src/app/contact-supplier-component/contact-supplier-component.ts',
+    './ContactSupplierAddComponent':
+      './src/app/contact-supplier-component/contact-supplier-add-component/contact-supplier-add-component.ts',
+    './ContactSupplierEditComponent':
+      './src/app/contact-supplier-component/contact-supplier-edit-component/contact-supplier-edit-component.ts',
+    './ContactSupplierViewComponent':
+      './src/app/contact-supplier-component/contact-supplier-view-component/contact-supplier-view-component.ts',
   },
 
   shared: {

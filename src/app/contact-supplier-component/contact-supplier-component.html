@@ -1,0 +1,30 @@
+<div class="contact-supplier-list-wrapper">
+  <h2>Supplier Master</h2>
+
+  <div class="actions">
+    @if (canAddSupplier) {
+      <p-button
+        icon="pi pi-plus"
+        label="New Supplier"
+        routerLink="/contact/supplier/add"
+      ></p-button>
+    }
+    <app-contact-supplier-filter-component
+      [(filter)]="filter"
+      (applied)="onFilterChange(filter())"
+    ></app-contact-supplier-filter-component>
+    @if (canImportSupplier) {
+      <p-button
+        label="Import"
+        icon="pi pi-file-import"
+        (click)="openImportDialog()"
+      ></p-button>
+    }
+  </div>
+
+  <app-contact-supplier-list
+    #table
+    [filter]="filter()"
+    (filterChange)="filter.set($event)"
+  ></app-contact-supplier-list>
+</div>

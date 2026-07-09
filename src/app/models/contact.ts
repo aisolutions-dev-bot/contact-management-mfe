@@ -145,6 +145,10 @@ export interface ImportClientRow {
   status?: string;
 }
 
+// Supplier shares the same shape as Client (same m03ContactMaster table).
+export type ContactSupplierList = ContactClientList;
+export type ImportSupplierRow = ImportClientRow;
+
 export interface DropdownOption {
   value: string;
   label: string;
@@ -152,6 +156,7 @@ export interface DropdownOption {
 
 export interface DropdownResponse {
   clients: DropdownOption[];
+  suppliers: DropdownOption[];
   staff: DropdownOption[];
   departments: DropdownOption[];
   contacts: DropdownOption[];
