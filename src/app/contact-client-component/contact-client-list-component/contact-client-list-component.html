@@ -16,8 +16,7 @@
         <ng-template #body let-rowData let-columns="columns">
           <tr
             class="clickable-row"
-            (contextmenu)="onContextMenu($event, rowData); contextMenuItems().length > 0 && contextMenu.toggle($event)"
-            #contextMenuTrigger
+            (click)="navigateToClientView(rowData)"
           >
             @for (col of columns; track col.field) {
               @if (col.type === 'tag') {
@@ -48,7 +47,6 @@
       </div>
     }
 
-    <p-contextMenu #contextMenu [model]="contextMenuItems()"></p-contextMenu>
   } @else if (loadingState() === LoadingState.Error) {
     <p>Something went wrong.</p>
   }

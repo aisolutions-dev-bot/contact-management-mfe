@@ -65,10 +65,76 @@ export interface ImportStaffRow {
 
 export interface ContactClientList {
     uniqId: number;
+    contactType?: string;
     contactId: string;
     contactName: string;
     contactRegId: string;
-    status: string;  
+    status?: string;
+
+    // Registration / profile
+    dateJoin?: string;
+    gstRegistered?: boolean;
+    gstNo?: string;
+    contactPerson?: string;
+    industry?: string;
+
+    // Grouping
+    locationGroup?: string;
+    salesGroup?: string;
+    contactGroup?: string;
+    salesPerson?: string;
+    inCharge?: string;
+
+    // Main contact
+    tel?: string;
+    fax?: string;
+    hp?: string;
+    email?: string;
+
+    // Main address
+    addBlock?: string;
+    addNos?: string;
+    addFloor?: string;
+    addUnit?: string;
+    address1?: string;
+    addStreet?: string;
+    addBuilding?: string;
+    addPostal?: string;
+    addState?: string;
+    addCity?: string;
+    addCountry?: string;
+
+    // Billing contact
+    billTel?: string;
+    billFax?: string;
+    billHp?: string;
+    billEmail?: string;
+
+    // Billing address
+    billBlock?: string;
+    billNos?: string;
+    billFloor?: string;
+    billUnit?: string;
+    billAddress1?: string;
+    billStreet?: string;
+    billBuilding?: string;
+    billPostal?: string;
+    billState?: string;
+    billCity?: string;
+    billCountry?: string;
+
+    // Terms & currency
+    arTerm?: string;
+    apTerm?: string;
+    rentalTerm?: string;
+    shippingTerm?: string;
+    arCurrency?: string;
+    apCurrency?: string;
+
+    entryStaff?: string;
+    entryDate?: string;
+    lastEditStaff?: string;
+    lastEditDate?: string;
 }
 
 export interface ImportClientRow {

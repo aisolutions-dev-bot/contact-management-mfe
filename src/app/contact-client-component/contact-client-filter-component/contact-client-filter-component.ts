@@ -41,7 +41,7 @@ export class ContactClientFilterComponent implements OnInit {
 
     statusOpts = signal<DropdownOption[]>([
         { label: 'Active', value: 'ACTIVE' },
-        { label: 'All Contact', value: '' }
+        { label: 'All Clients', value: '' }
     ]);
     contactsOpts = signal<DropdownOption[]>([]);
 
@@ -77,11 +77,11 @@ export class ContactClientFilterComponent implements OnInit {
     private loadDropdowns(): void {
         this.loading.set(true);
 
-        const requiredTypes = ['contacts'];
+        const requiredTypes = ['clients'];
 
         this.clientListService.getDropdownsByTypes(requiredTypes).subscribe({
             next: (data) => {
-                this.contactsOpts.set(this.formatDropdownOptions(data.contacts || []));
+                this.contactsOpts.set(this.formatDropdownOptions(data.clients || []));
                 this.loading.set(false);
             },
             error: (err) => {

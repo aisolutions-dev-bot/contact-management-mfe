@@ -1,7 +1,6 @@
 import {
   ChangeDetectorRef,
   Component,
-  computed,
   EventEmitter,
   inject,
   Input,
@@ -13,7 +12,6 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ContextMenuModule } from 'primeng/contextmenu';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ContactTableComponent } from '../../components/table-component/table-component';
@@ -25,19 +23,17 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
     selector: 'app-contact-client-list',
     standalone: true,
     imports: [
-      ReactiveFormsModule, 
-      ContactTableComponent, 
+      ReactiveFormsModule,
+      ContactTableComponent,
       ProgressSpinnerModule,
-      TableModule, 
-      TagModule, 
-      ContextMenuModule
+      TableModule,
+      TagModule,
     ],
     templateUrl: './contact-client-list-component.html',
     styleUrls: ['./contact-client-list-component.scss'],
 })
 export class ContactClientListComponent implements OnInit, OnChanges {
     @Input({ required: true }) filter!: Record<string, any>;
-    @Input() canEdit = false;
     @Output() filterChange = new EventEmitter<Record<string, any>>();
 
     private router = inject(Router);
@@ -47,36 +43,15 @@ export class ContactClientListComponent implements OnInit, OnChanges {
     LoadingState = LoadingState;
     loadingState = signal<LoadingState>(LoadingState.Loading);
     clients = signal<ContactClientList[]>([]);
-    selectedRowData = signal<ContactClientList | null>(null);
 
     columns = signal<TableColumn[]>([
-        { field: 'contactType', header: 'Contact Type' },
-        { field: 'contactId', header: 'Contact ID' },
-        { field: 'contactName', header: 'Contact Name' },
-        { field: 'contactRegId', header: 'Contact Reg. No.' },
+        { field: 'contactType', header: 'Client Type' },
+        { field: 'contactId', header: 'Client ID' },
+        { field: 'contactName', header: 'Client Name' },
+        { field: 'contactRegId', header: 'Registration No.' },
+        { field: 'email', header: 'Email' },
+        { field: 'tel', header: 'Phone' },
     ]);
-
-    contextMenuItems = computed(() => {
-        const selected = this.selectedRowData();
-        if (!selected) return [];
-
-        const items: any[] = [];
-
-        if (this.canEdit) {
-            items.push({
-                label: 'Edit Client',
-                icon: 'pi pi-fw pi-file-edit',
-                command: () => this.navigateToClientEdit(selected),
-            });
-        }
-
-        if (items.length === 0) return [];
-
-        items.push({ separator: true });
-        items.push({ label: 'Cancel', icon: 'pi pi-fw pi-times' });
-
-        return items;
-    });
 
     ngOnInit() {
       this.load();
@@ -129,14 +104,9 @@ export class ContactClientListComponent implements OnInit, OnChanges {
         return `${day}/${month}/${year}`;
     }
 
-    onContextMenu(event: MouseEvent, rowData: ContactClientList): void {
-        event.preventDefault();
-        this.selectedRowData.set(rowData);
-    }
-
-    navigateToClientEdit(client: ContactClientList | null): void {
+    navigateToClientView(client: ContactClientList | null): void {
         if (!client) return;
 
-        this.router.navigate(['/contact/client/edit', client.uniqId]);
+        this.router.navigate(['/contact/client/view', client.uniqId]);
     }
 }

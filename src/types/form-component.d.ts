@@ -11,7 +11,8 @@ declare module '@ai-solutions-ui/form-component' {
     | 'radio'
     | 'multiselect'
     | 'password'
-    | 'toggle';
+    | 'toggle'
+    | 'divider';
 
   /* 1.  generic field that keeps the literal key  */
   export interface FormField<K extends string = string> {
@@ -27,6 +28,10 @@ declare module '@ai-solutions-ui/form-component' {
     // Layout properties
     colSpan?: number;     // Column span (1-12), e.g., 2 = spans 2 columns
     rowSpan?: number;
+
+    // Divider-specific (only used when type = 'divider')
+    collapsible?: boolean;
+    collapsed?: boolean;
   }
 
   export interface FormFieldGroup {

@@ -1,0 +1,122 @@
+<div class="client-view-wrapper">
+
+  @if (loadingState() === LoadingState.Loading) {
+    <div class="spinner-wrapper">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+    </div>
+  }
+
+  @else if (loadingState() === LoadingState.Error) {
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>Failed to load client record.</span>
+      <p-button label="Back" icon="pi pi-arrow-left" (onClick)="goBack()" severity="secondary" [outlined]="true" />
+    </div>
+  }
+
+  @else if (client(); as c) {
+
+    <!-- Toolbar -->
+    <div class="detail-toolbar">
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" (onClick)="goBack()" />
+      <div class="toolbar-right">
+        @if (canEdit) {
+          <p-button icon="pi pi-pencil" label="Edit" severity="primary" (onClick)="goEdit()" />
+        }
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <p-card styleClass="detail-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <i class="pi pi-building"></i>
+            <span><strong>{{ c.contactId }}</strong> — {{ c.contactName }}</span>
+          </div>
+          @if (c.contactType) {
+            <p-tag [value]="c.contactType" severity="info" />
+          }
+        </div>
+      </ng-template>
+
+      <!-- Company Details -->
+      <div class="section-title"><i class="pi pi-id-card"></i> Company Details</div>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Client Type</span><span class="value">{{ c.contactType || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Client ID</span><span class="value">{{ c.contactId || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Client Name</span><span class="value">{{ c.contactName || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Registration No.</span><span class="value">{{ c.contactRegId || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Registration Date</span><span class="value">{{ fmtDate(c.dateJoin) }}</span></div>
+        <div class="detail-field"><span class="label">Industry</span><span class="value">{{ c.industry || '—' }}</span></div>
+      </div>
+
+      <p-divider />
+
+      <!-- Sales & Classification -->
+      <div class="section-title"><i class="pi pi-sitemap"></i> Sales &amp; Classification</div>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Group</span><span class="value">{{ c.contactGroup || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Location Group</span><span class="value">{{ c.locationGroup || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Sales Group</span><span class="value">{{ c.salesGroup || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Salesman</span><span class="value">{{ c.salesPerson || '—' }}</span></div>
+        <div class="detail-field"><span class="label">In-Charge</span><span class="value">{{ c.inCharge || '—' }}</span></div>
+      </div>
+
+      <p-divider />
+
+      <!-- Financial / Accounting -->
+      <div class="section-title"><i class="pi pi-dollar"></i> Financial / Accounting</div>
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="label">GST Registered</span>
+          <span class="value">
+            @if (c.gstRegistered) { <p-tag value="Yes" severity="success" /> } @else { <p-tag value="No" severity="secondary" /> }
+          </span>
+        </div>
+        <div class="detail-field"><span class="label">GST No.</span><span class="value">{{ c.gstNo || '—' }}</span></div>
+        <div class="detail-field"><span class="label">AR Currency</span><span class="value">{{ c.arCurrency || '—' }}</span></div>
+        <div class="detail-field"><span class="label">AR Term</span><span class="value">{{ c.arTerm || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Rental Term</span><span class="value">{{ c.rentalTerm || '—' }}</span></div>
+        <div class="detail-field"><span class="label">AP Currency</span><span class="value">{{ c.apCurrency || '—' }}</span></div>
+        <div class="detail-field"><span class="label">AP Term</span><span class="value">{{ c.apTerm || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Shipping Term</span><span class="value">{{ c.shippingTerm || '—' }}</span></div>
+      </div>
+
+      <p-divider />
+
+      <!-- Primary Contact & Address -->
+      <div class="section-title"><i class="pi pi-map-marker"></i> Primary Contact &amp; Address</div>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Contact Person</span><span class="value">{{ c.contactPerson || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Email</span><span class="value">{{ c.email || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Telephone</span><span class="value">{{ c.tel || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Mobile</span><span class="value">{{ c.hp || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Fax</span><span class="value">{{ c.fax || '—' }}</span></div>
+        <div class="detail-field wide"><span class="label">Address</span><span class="value">{{ composeAddress([c.addBlock, c.addNos, c.addFloor, c.addUnit, c.address1, c.addStreet, c.addBuilding, c.addCity, c.addState, c.addPostal, c.addCountry]) }}</span></div>
+      </div>
+
+      <p-divider />
+
+      <!-- Billing Contact & Address -->
+      <div class="section-title"><i class="pi pi-credit-card"></i> Billing Contact &amp; Address</div>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Telephone</span><span class="value">{{ c.billTel || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Fax</span><span class="value">{{ c.billFax || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Mobile</span><span class="value">{{ c.billHp || '—' }}</span></div>
+        <div class="detail-field"><span class="label">Email</span><span class="value">{{ c.billEmail || '—' }}</span></div>
+        <div class="detail-field wide"><span class="label">Address</span><span class="value">{{ composeAddress([c.billBlock, c.billNos, c.billFloor, c.billUnit, c.billAddress1, c.billStreet, c.billBuilding, c.billCity, c.billState, c.billPostal, c.billCountry]) }}</span></div>
+      </div>
+
+    </p-card>
+
+    <!-- Audit trail -->
+    <p-card styleClass="detail-card audit-card">
+      <div class="audit-row">
+        <span><strong>Created by:</strong> {{ c.entryStaff || '—' }} on {{ fmtDate(c.entryDate) }}</span>
+        <span><strong>Last edited by:</strong> {{ c.lastEditStaff || '—' }} on {{ fmtDate(c.lastEditDate) }}</span>
+      </div>
+    </p-card>
+
+  }
+</div>

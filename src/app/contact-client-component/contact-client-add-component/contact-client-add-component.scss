@@ -118,6 +118,47 @@ $floating-bar-height: 55px;
   gap: 0.5rem;
   font-weight: 600;
   font-size: 0.95rem;
+
+  i { color: var(--p-primary-500); }
+}
+
+// ─── Wizard Header ────────────────────────────────────────
+.wizard-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+  animation: slide-up 0.45s $ease both;
+}
+
+.wizard-step-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--p-text-muted-color);
+}
+
+.wizard-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+
+.wizard-progress {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.wizard-progress-step {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--p-surface-200);
+  transition: background 0.3s $ease;
+
+  &.active { background: var(--p-primary-500); }
 }
 
 // ─── Form Section ─────────────────────────────────────────

@@ -25,7 +25,6 @@
   <app-contact-client-list
     #table
     [filter]="filter()"
-    [canEdit]="canEditClient"
     (filterChange)="filter.set($event)"
   ></app-contact-client-list>
 </div>

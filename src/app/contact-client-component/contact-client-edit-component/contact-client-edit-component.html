@@ -34,11 +34,19 @@
           [remoteEntry]="uiMfeUrl"
           [exposedModule]="'./Form'"
           [exportName]="'FormComponent'"
-          [inputs]="{ config: formConfig() }"
+          [inputs]="{ config: formConfig(), triggerSubmit: triggerSubmit() }"
           (outputs)="onRemoteOutput($event)"
         ></remote-component>
       </div>
     </p-card>
+
+    <!-- Floating Action Bar -->
+    <app-floating-action-bar
+      [visible]="true"
+      [loading]="saving()"
+      [buttons]="actionButtons"
+      (actionClicked)="onActionClicked($event)"
+    ></app-floating-action-bar>
 
   } @else if (loadingState() === LoadingState.Error) {
     <div class="error-state">

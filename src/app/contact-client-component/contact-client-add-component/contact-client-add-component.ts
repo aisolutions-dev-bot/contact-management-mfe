@@ -1,292 +1,346 @@
-import { Component, Inject, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, Inject, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormConfig } from '@ai-solutions-ui/form-component';
 import { RemoteComponent } from '../../components/remote-component';
 import { ContactClientService } from '../services/contact-client-service';
 import { environment } from '../../../environments/environment';
 import { DropdownOption, DropdownResponse, IAppMessageService, LoadingState } from '../../models/contact';
+import { ActionButton, FloatingActionBarComponent } from '../../components/floating-action-bar/floating-action-bar-component';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import {
+  CLIENT_STEP1_FIELDS,
+  CLIENT_STEP2_FIELDS,
+  CLIENT_STEP3_FIELDS,
+  CLIENT_STEP4_FIELDS,
+  MAIN_TO_BILLING,
+  emptyForFields,
+  gstValidationError,
+  normalizeGst,
+} from '../client-form-fields';
 
 @Component({
   selector: 'app-contact-client-add',
   standalone: true,
   imports: [
-    RemoteComponent, 
+    RemoteComponent,
     ProgressSpinnerModule,
     ButtonModule,
     CardModule,
-    RouterLink
+    RouterLink,
+    FloatingActionBarComponent,
   ],
   templateUrl: './contact-client-add-component.html',
   styleUrls: ['./contact-client-add-component.scss'],
 })
 export class ContactClientAddComponent implements OnInit {
 
-    //#region INJECTED DEPENDENCIES
-    private router = inject(Router);
-    private clientService = inject(ContactClientService);
+  //#region INJECTED DEPENDENCIES
+  private router = inject(Router);
+  private clientService = inject(ContactClientService);
 
-    constructor(
-        @Inject('MESSAGING_SERVICE')
-        public messageService: IAppMessageService,
-    ) { }
-    //#endregion
+  constructor(
+    @Inject('MESSAGING_SERVICE')
+    public messageService: IAppMessageService,
+  ) { }
+  //#endregion
 
-    //#region SIGNALS - UI STATE MANAGEMENT
+  //#region SIGNALS - UI STATE MANAGEMENT
 
-    // Data maps for lookups
-    private contactTypeDataMap = signal<Map<string, string>>(new Map());
+  readonly TOTAL_STEPS = 4;
+  wizardStep = signal<number>(1);
 
-    // Dropdown options
-    contactTypeOpts = signal<DropdownOption[]>([]);
-    
-    // UI loading states
-    uniqId = signal<number | null>(null);
-    LoadingState = LoadingState;
-    loadingState = signal<LoadingState>(LoadingState.Loading);
-    saving = signal<boolean>(false);
-    
-    // Configuration & Environment
-    uiMfeUrl = environment.uiMfeUrl;
-    //#endregion
+  actionButtons = computed<ActionButton[]>(() => {
+    const step = this.wizardStep();
+    const buttons: ActionButton[] = [];
+    if (step === 1) {
+      buttons.push({ label: 'Cancel', icon: 'pi pi-times', action: 'cancel', severity: 'secondary', outlined: true });
+    } else {
+      buttons.push({ label: 'Back', icon: 'pi pi-arrow-left', action: 'back', severity: 'secondary', outlined: true });
+    }
+    if (step < this.TOTAL_STEPS) {
+      buttons.push({ label: 'Next', icon: 'pi pi-arrow-right', action: 'next', severity: 'primary' });
+    } else {
+      buttons.push({ label: 'Create', icon: 'pi pi-check', action: 'save', severity: 'primary' });
+    }
+    return buttons;
+  });
 
-    //#region FORM CONFIGURATION
+  stepTitle = computed<string>(() => {
+    switch (this.wizardStep()) {
+      case 1: return 'Company & Classification';
+      case 2: return 'Financial / Accounting';
+      case 3: return 'Contact & Address';
+      case 4: return 'Billing Contact & Address';
+      default: return '';
+    }
+  });
 
-    private readonly formFields = [
-        // ========== ROW 1: Contact Type, Contact ID ==========
-         {
-            key: 'contactType',
-            label: 'Contact Type',
-            type: 'select' as const,
-            icon: 'pi-building',
-            colSpan: 3,
-            options: [],
-        },
-        {
-            key: 'contactId',
-            label: 'Contact ID',
-            type: 'text' as const,
-            icon: 'pi-hashtag',
-            colSpan: 3,
-        },
+  fieldErrors = signal<Record<string, any>>({});
+  triggerSubmit = signal<boolean>(false);
+  billingPatch = signal<Record<string, any> | null>(null);
 
-        // ========== ROW 2: Contact Name, Contact Registration No ==========
-        {
-            key: 'contactName',
-            label: 'Contact Name',
-            type: 'text' as const,
-            icon: 'pi-user',
-            colSpan: 4,
-        },
-    
-        {
-            key: 'contactRegId',
-            label: 'Contact Registration No.',
-            type: 'text' as const,
-            icon: 'pi-file',
-            colSpan: 2,
-        },
-    ];
+  LoadingState = LoadingState;
+  loadingState = signal<LoadingState>(LoadingState.Loading);
+  saving = signal<boolean>(false);
 
-    private formConfigSignal = signal<FormConfig>({
-        title: 'Add New Client',
-        layout: 'grid',
-        gridColumns: 6,
-        fields: this.formFields,
-        model: {
-            contactType: '',
-            contactId: '',
-            contactName: '',
-            contactRegId: '',
-        },
-        buttonLabel: 'Create Client',
+  uiMfeUrl = environment.uiMfeUrl;
+
+  // Accumulated model per step
+  private model1: Record<string, any> = {};
+  private model2: Record<string, any> = {};
+  private model3: Record<string, any> = {};
+  private model4: Record<string, any> = {};
+
+  //#endregion
+
+  //#region FORM CONFIGURATION
+
+  config1 = signal<FormConfig>({
+    title: '',
+    layout: 'grid',
+    gridColumns: 6,
+    fields: CLIENT_STEP1_FIELDS,
+    model: {},
+    showButton: false,
+  });
+
+  config2 = signal<FormConfig>({
+    title: '',
+    layout: 'grid',
+    gridColumns: 6,
+    fields: CLIENT_STEP2_FIELDS,
+    model: {},
+    showButton: false,
+  });
+
+  config3 = signal<FormConfig>({
+    title: '',
+    layout: 'grid',
+    gridColumns: 6,
+    fields: CLIENT_STEP3_FIELDS,
+    model: {},
+    showButton: false,
+  });
+
+  config4 = signal<FormConfig>({
+    title: '',
+    layout: 'grid',
+    gridColumns: 6,
+    fields: CLIENT_STEP4_FIELDS,
+    model: {},
+    showButton: false,
+  });
+
+  //#endregion
+
+  ngOnInit(): void {
+    // Seed each step with ONLY its own fields so merging step models at save
+    // time can't clobber one step's values with another step's null defaults.
+    this.model1 = emptyForFields(CLIENT_STEP1_FIELDS);
+    this.model2 = { ...emptyForFields(CLIENT_STEP2_FIELDS), gstRegistered: false };
+    this.model3 = emptyForFields(CLIENT_STEP3_FIELDS);
+    this.model4 = { ...emptyForFields(CLIENT_STEP4_FIELDS), sameAsMain: false };
+    this.syncConfigModels();
+    this.loadInitialFormData();
+  }
+
+  //#region DATA LOADING
+
+  private loadInitialFormData(): void {
+    this.loadingState.set(LoadingState.Loading);
+
+    this.clientService.getDropdownsByTypes(['contacttypes']).subscribe({
+      next: (data: DropdownResponse) => {
+        const options = (data.contacttypes || []).map((item: DropdownOption) => ({
+          value: item.value,
+          label: item.label,
+        }));
+        this.updateFieldOptions('contactType', options);
+        this.loadingState.set(LoadingState.Success);
+      },
+      error: (err) => {
+        this.messageService.showError('Error', 'Failed to load form data', err);
+        this.loadingState.set(LoadingState.Error);
+      }
+    });
+  }
+
+  //#endregion
+
+  //#region EVENT HANDLERS
+
+  onRemoteOutput(event: Record<string, any>): void {
+    if (event['modelChange']) {
+      this.handleModelChange(event['modelChange']);
+    }
+
+    if (event['formSubmit']) {
+      this.handleFormSubmit(event['formSubmit']);
+    }
+
+    if ('validationFailed' in event) {
+      this.triggerSubmit.set(false);
+      this.messageService.showWarn('Validation', 'Please check the form for errors');
+    }
+  }
+
+  private handleModelChange(model: Record<string, any>): void {
+    const step = this.wizardStep();
+    if (step === 1) {
+      this.model1 = { ...this.model1, ...model };
+    } else if (step === 2) {
+      const prevGst = this.model2['gstRegistered'];
+      this.model2 = { ...this.model2, ...model };
+      // GST No. visibility (hiddenWhen) only re-evaluates when the config signal
+      // changes — poke it so the field shows/hides when GST Registered flips.
+      if (this.model2['gstRegistered'] !== prevGst) {
+        this.config2.update((cfg) => ({ ...cfg }));
+      }
+    } else if (step === 3) {
+      this.model3 = { ...this.model3, ...model };
+    } else {
+      const wasSame = this.model4['sameAsMain'];
+      this.model4 = { ...this.model4, ...model };
+      // When "same as main" is switched on, copy main contact/address into billing.
+      if (this.model4['sameAsMain'] && !wasSame) {
+        this.applySameAsMain();
+      }
+    }
+  }
+
+  private applySameAsMain(): void {
+    const patch: Record<string, any> = {};
+    for (const [mainKey, billKey] of Object.entries(MAIN_TO_BILLING)) {
+      patch[billKey] = this.model3[mainKey] ?? null;
+    }
+    this.model4 = { ...this.model4, ...patch };
+    // Push into the already-built step-4 form (new object each time so it re-triggers).
+    this.billingPatch.set({ ...patch });
+  }
+
+  private handleFormSubmit(model: Record<string, any>): void {
+    this.triggerSubmit.set(false);
+    const step = this.wizardStep();
+
+    if (step === 1) {
+      this.model1 = { ...this.model1, ...model };
+      this.goToStep(2);
+    } else if (step === 2) {
+      this.model2 = { ...this.model2, ...model };
+      const gstErr = gstValidationError(this.model2);
+      if (gstErr) {
+        this.messageService.showWarn('Validation', gstErr);
+        return;
+      }
+      this.goToStep(3);
+    } else if (step === 3) {
+      this.model3 = { ...this.model3, ...model };
+      this.goToStep(4);
+    } else {
+      this.model4 = { ...this.model4, ...model };
+      this.onCreate();
+    }
+  }
+
+  //#endregion
+
+  //#region WIZARD NAVIGATION
+
+  onActionClicked(action: string): void {
+    switch (action) {
+      case 'cancel': this.onCancel(); break;
+      case 'next': this.triggerSubmit.set(true); break;
+      case 'back': this.goToStep(this.wizardStep() - 1); break;
+      case 'save': this.triggerSubmit.set(true); break;
+    }
+  }
+
+  private goToStep(step: number): void {
+    if (step < 1 || step > this.TOTAL_STEPS) return;
+    this.fieldErrors.set({});
+    this.syncConfigModels();
+    this.wizardStep.set(step);
+  }
+
+  private syncConfigModels(): void {
+    this.config1.update((cfg) => ({ ...cfg, model: { ...this.model1 } }));
+    this.config2.update((cfg) => ({ ...cfg, model: { ...this.model2 } }));
+    this.config3.update((cfg) => ({ ...cfg, model: { ...this.model3 } }));
+    this.config4.update((cfg) => ({ ...cfg, model: { ...this.model4 } }));
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/contact/client']);
+  }
+
+  //#endregion
+
+  //#region CLIENT CREATION
+
+  private onCreate(): void {
+    const payload = this.buildPayload();
+    this.saving.set(true);
+
+    this.clientService.createClient(payload).subscribe({
+      next: () => {
+        this.messageService.showSuccess('Success', 'Client created successfully!');
+        this.saving.set(false);
+        this.router.navigate(['/contact/client/']);
+      },
+      error: (err) => {
+        this.messageService.showError('Error', err.error?.error || 'Failed to create client');
+        this.saving.set(false);
+      }
+    });
+  }
+
+  private buildPayload(): Record<string, any> {
+    const merged: Record<string, any> = { ...this.model1, ...this.model2, ...this.model3, ...this.model4 };
+    delete merged['sameAsMain'];
+
+    const dateFields = ['dateJoin'];
+    const uppercaseFields = ['contactId', 'contactName', 'contactRegId'];
+
+    const payload: Record<string, any> = {};
+
+    Object.entries(merged).forEach(([key, value]) => {
+      if (value === null || value === undefined) return;
+      if (typeof value === 'string' && value.trim() === '') return;
+
+      if (dateFields.includes(key)) {
+        payload[key] = value instanceof Date ? this.convertDateToISOWithTimezone(value) : value;
+      } else if (uppercaseFields.includes(key) && typeof value === 'string') {
+        payload[key] = value.toUpperCase();
+      } else {
+        payload[key] = value;
+      }
     });
 
-    formConfig = this.formConfigSignal.asReadonly();
+    normalizeGst(payload);
+    return payload;
+  }
 
-    //#endregion
+  //#endregion
 
-    ngOnInit(): void {
-        this.loadInitialFormData();
-    }
+  //#region HELPERS
 
-    //#region INITIALIZATION & DATA LOAD
+  private updateFieldOptions(fieldKey: string, options: DropdownOption[]): void {
+    this.config1.update((cfg) => ({
+      ...cfg,
+      fields: cfg.fields.map((field) =>
+        field.key === fieldKey ? { ...field, options } : field
+      ),
+    }));
+  }
 
-    private loadInitialFormData(): void {
-        this.loadingState.set(LoadingState.Loading);
+  private convertDateToISOWithTimezone(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T00:00:00`;
+  }
 
-        const requiredTypes = ['contacttypes'];
-
-        this.clientService.getDropdownsByTypes(requiredTypes).subscribe({
-            next: (data: DropdownResponse) => {
-                this.processDropdownData(data);
-                this.loadClient();
-            },
-            error: (err) => {
-                this.messageService.showError('Error', err);
-                this.loadingState.set(LoadingState.Error);
-            }
-        });
-    }
-
-    private processDropdownData(data: DropdownResponse): void {
-        const contactTypeMap = new Map<string, string>();
-
-        const contactTypeOptions = (data.contacttypes || []).map((item: DropdownOption) => {
-            contactTypeMap.set(item.value, item.label);
-            return {
-                value: item.value,
-                label: `${item.label}`
-            };
-        });
-
-        this.contactTypeDataMap.set(contactTypeMap);
-
-        this.contactTypeOpts.set(contactTypeOptions);
-
-        this.updateFieldOptions('contactType', this.contactTypeOpts());
-    }
-
-    private loadClient(): void {
-
-        // Create complete initial model
-        const initialModel = {
-            contactType: '',
-            contactId: '',
-            contactName: '',
-            contactRegId: '',
-        };
-
-        this.formConfigSignal.update(cfg => ({
-            ...cfg,
-            title: 'Add New Client',
-            model: initialModel,
-        }));
-        this.loadingState.set(LoadingState.Success);
-    }
-
-    //#endregion
-
-    //#region EVENT HANDLERS
-    onRemoteOutput(event: Record<string, any>): void {
-        if (event['modelChange']) {
-        }
-
-        if (event['formButtonClicked']) {
-            this.saving.set(true);
-            this.addClient(event['formButtonClicked']);
-        }
-    }
-
-    //#endregion
-
-    //#region FORM SUBMISSION & CLIENT CREATION
-
-    addClient(model: Record<string, any>): void {
-        const payload = this.buildPayload(model);
-
-        this.clientService.createClient(payload).subscribe({
-            next: () => {
-                this.messageService.showSuccess('Success', 'Client created successfully!');
-                this.saving.set(false);
-                this.router.navigate(['/contact/client/']);
-            },
-            error: (err) => {
-                this.messageService.showError(
-                    'Error', 
-                    err.error?.error || 'Failed to create client');
-                this.saving.set(false);
-            }
-        });
-    }
-
-    private buildPayload(model: Record<string, any>): Record<string, any> {
-
-        // Field name mapping (form → backend)
-        const fieldMap: Record<string, string> = { };
-
-        const dateFields = '';
-        const uppercaseFields = ['contactId', 'contactName', 'contactRegId'];
-
-        const payload: Record<string, any> = {};
-
-        // Build payload from model
-        Object.entries(model).forEach(([key, value]) => {
-
-            // Skip null/undefined
-            if (value === null || value === undefined) return;
-
-            // Map field name if needed
-            const fieldName = fieldMap[key] || key;
-
-            // Convert dates to ISO with timezone offset
-            if (dateFields.includes(key)) {
-                if (value instanceof Date) {
-                    payload[fieldName] = this.convertDateToISOWithTimezone(value);
-                } else {
-                    payload[fieldName] = value;
-                }
-            }
-            // Convert to uppercase
-            else if (uppercaseFields.includes(key) && typeof value === 'string') {
-                payload[fieldName] = value.toUpperCase();
-            }
-            else {
-                payload[fieldName] = value;
-            }
-
-        });
-
-        return payload;
-    }
-
-    //#endregion
-
-    //#region FORM MANIPULATION HELPERS
-
-    private updateFieldOptions(fieldKey: string, options: DropdownOption[]): void {
-        this.formConfigSignal.update(cfg => ({
-            ...cfg,
-            fields: cfg.fields.map(field =>
-                field.key === fieldKey ? { ...field, options } : field
-            )
-        }));
-    }
-
-    //#endregion
-
-    //#region UTILITY METHODS - Date & Format Conversions
-
-    // Format date: "2025-12-08T00:00:00" → "08/12/2025"
-    private formatDate(value: any): string {
-        if (!value) return '';
-
-        try {
-            const date = new Date(value);
-            if (isNaN(date.getTime())) return '';
-
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = date.getFullYear();
-
-            return `${month}/${day}/${year}`;  // mm/dd/yyyy
-        } catch {
-            return '';
-        }
-    }
-
-    private convertDateToISOWithTimezone(date: Date): string {
-        // Get date components in local timezone (not UTC)
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-
-        // Return ISO format with time: YYYY-MM-DDTHH:mm:ss
-        const result = `${year}-${month}-${day}T00:00:00`;
-        return result;
-    }
-
-    //#endregion 
+  //#endregion
 }
