@@ -14,6 +14,11 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 ARG GIT_BRANCH=$GIT_BRANCH
+ARG GIT_COMMIT_SHA=$GIT_COMMIT_SHA
+ENV GIT_COMMIT_SHA=$GIT_COMMIT_SHA
+
+# Write version.json (version/commit/build time) so the running app can detect new deploys
+RUN node scripts/write-version.js
 
 # Build Angular app for or staging accordingly
 RUN if [ "$GIT_BRANCH" = "staging" ]; then \
