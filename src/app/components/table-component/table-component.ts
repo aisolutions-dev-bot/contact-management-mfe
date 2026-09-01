@@ -25,6 +25,7 @@ export class ContactTableComponent {
     @Input() cellClass?: (row: any, col: any) => string;
     @Input() paginator = true;
     @Input() rows = 10;
+    @Input() first = 0;
     @Input() scrollable = false;
     @Input() showGridlines = false;
 

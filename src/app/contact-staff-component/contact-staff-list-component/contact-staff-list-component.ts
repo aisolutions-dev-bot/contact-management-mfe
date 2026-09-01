@@ -45,10 +45,12 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 })
 export class ContactStaffListComponent implements OnInit, OnChanges {
     @Input({ required: true }) filter!: Record<string, any>;
+    @Input() first = 0;
     @Input() canEdit = false;
     @Input() canSecurity = false;
     @Input() canChangeStatus = false;
     @Output() filterChange = new EventEmitter<Record<string, any>>();
+    @Output() pageChange = new EventEmitter<number>();
 
     private router = inject(Router);
     cdr = inject(ChangeDetectorRef);
@@ -175,6 +177,14 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
         const year = date.getFullYear();
 
         return `${day}/${month}/${year}`;
+    }
+
+    /** The shared table forwards remote events as { <emitterName>: payload }. */
+    onTableOutput(event: Record<string, any>): void {
+        const page = event?.['onPage'];
+        if (page && typeof page.first === 'number') {
+            this.pageChange.emit(page.first);
+        }
     }
 
     onContextMenu(event: MouseEvent, rowData: ContactStaffList): void {

@@ -1,55 +1,140 @@
-<!-- trigger -->
-<p-button label="Filter" icon="pi pi-filter" (onClick)="toggle($event)"></p-button>
+<p-panel
+  header="Search & Filter"
+  styleClass="staff-filter-panel"
+>
+  <div class="filter-body" (keyup.enter)="search()">
 
-<!-- popover -->
-<p-popover #ContactStaffFilter styleClass="cont-menu-popover">
-  <div class="cont-menu">
-    <form [formGroup]="form" class="filter-bar">
-      <p-select
-        formControlName="status"
-        [options]="statusOpts()"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Status"
-        [filter]="true"
-        [showClear]="true"
-      >
-      </p-select>
+    <!-- Default row (always visible) -->
+    <div class="filter-grid">
 
-      <p-select
-        formControlName="staffId"
-        [options]="staffOpts()"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Staff"
-        [filter]="true"
-        [showClear]="true"
-      >
-      </p-select>
+      <div class="filter-field">
+        <label>Status</label>
+        <p-select
+          [(ngModel)]="status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Statuses"
+          styleClass="w-full"
+        />
+      </div>
 
-      <input
-        pInputText
-        formControlName="nric"
-        placeholder="NRIC"  
-      />
+      @if (canViewAllDept()) {
+        <div class="filter-field">
+          <label>Department</label>
+          <p-autoComplete
+            [(ngModel)]="departmentModel"
+            [suggestions]="filteredDepartments()"
+            (completeMethod)="onDepartmentSearch($event)"
+            (onSelect)="onDepartmentSelect($event)"
+            (onClear)="onDepartmentClear()"
+            field="label"
+            [dropdown]="true"
+            dropdownIcon="pi pi-chevron-down"
+            [forceSelection]="false"
+            [minLength]="0"
+            [showClear]="true"
+            placeholder="Search department…"
+            appendTo="body"
+            styleClass="w-full"
+          />
+        </div>
+      }
 
-      <p-datePicker
-        formControlName="dateFrom"
-        placeholder="Date Join From"
-        dateFormat="yy-mm-dd"
-        [showIcon]="true"
-      >
-      </p-datePicker>
-      <p-datePicker
-        formControlName="dateTo"
-        placeholder="Date Join To"
-        dateFormat="yy-mm-dd"
-        [showIcon]="true"
-      >
-      </p-datePicker>
+      <div class="filter-field">
+        <label>Staff</label>
+        <p-autoComplete
+          [(ngModel)]="staffModel"
+          [suggestions]="filteredStaff()"
+          (completeMethod)="onStaffSearch($event)"
+          (onSelect)="onStaffSelect($event)"
+          (onClear)="onStaffClear()"
+          field="label"
+          [dropdown]="true"
+          dropdownIcon="pi pi-chevron-down"
+          [forceSelection]="false"
+          [minLength]="0"
+          [showClear]="true"
+          placeholder="Search by ID or name…"
+          appendTo="body"
+          styleClass="w-full"
+        />
+      </div>
 
-      <p-button label="Apply" (onClick)="apply()"> </p-button>
-      <p-button label="Clear" styleClass="p-button-outlined" (onClick)="clear()"> </p-button>
-    </form>
+      <div class="filter-field">
+        <label>Join Date From</label>
+        <p-datepicker
+          [(ngModel)]="dateFrom"
+          dateFormat="yy-mm-dd"
+          placeholder="yyyy-mm-dd"
+          [showIcon]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label>Join Date To</label>
+        <p-datepicker
+          [(ngModel)]="dateTo"
+          dateFormat="yy-mm-dd"
+          placeholder="yyyy-mm-dd"
+          [showIcon]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+    </div>
+
+    <!-- Expanded fields (revealed by the toggle) -->
+    @if (isExpanded()) {
+      <div class="filter-grid filter-grid--expanded">
+
+        <div class="filter-field">
+          <label>NRIC</label>
+          <input pInputText [(ngModel)]="nric" placeholder="Search NRIC..." class="w-full" />
+        </div>
+
+      </div>
+    }
+
+    <!-- Active filter chips -->
+    @if (appliedChips().length) {
+      <div class="active-filters">
+        <span class="active-filters__label">Active:</span>
+        @for (chip of appliedChips(); track chip.key) {
+          <p-chip
+            [label]="chip.label"
+            [removable]="true"
+            (onRemove)="removeChip(chip.key)"
+          />
+        }
+      </div>
+    }
+
   </div>
-</p-popover>
+
+  <!-- Action bar -->
+  <div class="filter-actions">
+    <p-button
+      [icon]="isExpanded() ? 'pi pi-minus' : 'pi pi-plus'"
+      [label]="(isExpanded() ? 'Fewer filters' : 'More filters') + (!isExpanded() && advancedCount ? ' (' + advancedCount + ')' : '')"
+      (onClick)="toggleExpand()"
+      severity="secondary"
+      [text]="true"
+      class="filter-toggle-btn"
+    />
+    <p-button
+      icon="pi pi-search"
+      label="Search"
+      (onClick)="search()"
+      severity="primary"
+    />
+    <p-button
+      icon="pi pi-times"
+      label="Reset"
+      (onClick)="reset()"
+      severity="secondary"
+      [outlined]="true"
+    />
+  </div>
+</p-panel>

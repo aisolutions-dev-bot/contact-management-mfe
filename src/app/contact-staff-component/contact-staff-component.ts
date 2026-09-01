@@ -29,6 +29,7 @@ export class ContactStaffComponent implements OnInit {
     readonly SECURITY_ACCESS_CODE      = 'a0303.04';
     readonly IMPORT_ACCESS_CODE        = 'a0303.05';
     readonly CHANGE_STATUS_ACCESS_CODE = 'a0303.06';
+    readonly VIEW_ALL_DEPT_ACCESS_CODE = 'a0303.07';
 
     canAddStaff          = false;
     canEditStaff         = false;
@@ -36,6 +37,7 @@ export class ContactStaffComponent implements OnInit {
     canSecurityStaff     = false;
     canImportStaff       = false;
     canChangeStatusStaff = false;
+    canViewAllDept       = false;
 
     private cdr = inject(ChangeDetectorRef);
 
@@ -45,8 +47,10 @@ export class ContactStaffComponent implements OnInit {
     ) { }
 
     private readonly FILTER_KEY = 'contact_staff_filter';
+    private readonly FIRST_KEY = 'contact_staff_first';
 
     filter = signal<Record<string, any>>(this.restoreFilter());
+    first = signal<number>(this.restoreFirst());
 
     @ViewChild('table') table!: ContactStaffListComponent;
 
@@ -63,26 +67,52 @@ export class ContactStaffComponent implements OnInit {
         this.canSecurityStaff     = accesses.some((a) => a.accessCode === this.SECURITY_ACCESS_CODE      && a.accessValue);
         this.canImportStaff       = accesses.some((a) => a.accessCode === this.IMPORT_ACCESS_CODE        && a.accessValue);
         this.canChangeStatusStaff = accesses.some((a) => a.accessCode === this.CHANGE_STATUS_ACCESS_CODE && a.accessValue);
+        this.canViewAllDept       = accesses.some((a) => a.accessCode === this.VIEW_ALL_DEPT_ACCESS_CODE   && a.accessValue);
         this.cdr.markForCheck();
     }
 
     onFilterChange(f: Record<string, any>): void {
         this.filter.set(f);
         this.persistFilter(f);
+        // A new filter starts from page one.
+        this.first.set(0);
+        this.persistFirst(0);
+    }
+
+    onFirstChange(first: number): void {
+        this.first.set(first);
+        this.persistFirst(first);
     }
 
     private restoreFilter(): Record<string, any> {
+        // Default view = Open staff (matches the Status dropdown's default).
         try {
             const raw = sessionStorage.getItem(this.FILTER_KEY);
-            return raw ? JSON.parse(raw) : {};
+            return raw ? JSON.parse(raw) : { status: 'O' };
         } catch {
-            return {};
+            return { status: 'O' };
         }
     }
 
     private persistFilter(f: Record<string, any>): void {
         try {
             sessionStorage.setItem(this.FILTER_KEY, JSON.stringify(f));
+        } catch { }
+    }
+
+    private restoreFirst(): number {
+        try {
+            const raw = sessionStorage.getItem(this.FIRST_KEY);
+            const n = raw ? parseInt(raw, 10) : 0;
+            return Number.isFinite(n) && n >= 0 ? n : 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    private persistFirst(first: number): void {
+        try {
+            sessionStorage.setItem(this.FIRST_KEY, String(first));
         } catch { }
     }
 

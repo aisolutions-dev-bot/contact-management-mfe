@@ -30,6 +30,11 @@ export class ContactStaffService {
         );
     }
 
+    /** Staff options for the filter dropdown, scoped by the caller's View All Dept access. */
+    getStaffOptions(): Observable<DropdownOption[]> {
+        return this.http.get<DropdownOption[]>(`${this.baseUrl}/staff-options`);
+    }
+
     getStaffById(uniqId: number): Observable<ContactStaffList> {
         return this.http.get<ContactStaffList>(
             `${this.baseUrl}/${uniqId}`

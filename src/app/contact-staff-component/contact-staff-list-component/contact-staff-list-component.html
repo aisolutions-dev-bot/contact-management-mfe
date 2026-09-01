@@ -11,6 +11,8 @@
         styleClass=""
         [tableStyle]="{ 'min-width': '60rem' }"
         [scrollable]="true"
+        [first]="first"
+        (outputs)="onTableOutput($event)"
       >
         <ng-template #body let-rowData let-columns="columns">
           <tr
