@@ -11,6 +11,9 @@ import { CardModule } from 'primeng/card';
 import { Validators } from '@angular/forms';
 import { ActionButton, FloatingActionBarComponent } from '../../components/floating-action-bar/floating-action-bar-component';
 
+/** Group authority hidden from the Contact Staff security dropdown. */
+const HIDDEN_GROUP_AUTHORITY = 'SUPERADMIN';
+
 @Component({
   selector: 'app-contact-staff-security',
   standalone: true,
@@ -150,7 +153,7 @@ export class ContactStaffSecurityComponent implements OnInit {
     this.staffService.getGroupAuthorities().subscribe({
       next: (opts) => {
         this.groupAuthorityOpts.set(opts);
-        this.updateFieldOptions('secGroupAuthority', opts);
+        this.updateFieldOptions('secGroupAuthority', this.selectableGroupAuthorities(null));
         this.loadStaff(id);
       },
       error: () => {
@@ -186,6 +189,8 @@ export class ContactStaffSecurityComponent implements OnInit {
     };
 
     this.updateSecurityFields(isSystemUser);
+    this.updateFieldOptions('secGroupAuthority',
+      this.selectableGroupAuthorities(staff['secGroupAuthority']));
     this.previousSystemUser = isSystemUser;
     this.setFormModel(formData);
     this.loadingState.set(LoadingState.Success);
@@ -217,6 +222,20 @@ export class ContactStaffSecurityComponent implements OnInit {
         field.key === fieldKey ? { ...field, options } : field
       )
     }));
+  }
+
+  /**
+   * Group-authority options as returned by the backend (SUPERADMIN already excluded there). If
+   * the staff being edited is already assigned SUPERADMIN, that value is added back so it still
+   * displays and isn't silently cleared on save — it just can't be re-selected once changed.
+   */
+  private selectableGroupAuthorities(currentValue: string | null | undefined): DropdownOption[] {
+    const opts = this.groupAuthorityOpts();
+    const isCurrentSuperadmin = !!currentValue && currentValue.toUpperCase() === HIDDEN_GROUP_AUTHORITY;
+    if (isCurrentSuperadmin && !opts.some(opt => opt.value === currentValue)) {
+      return [...opts, { value: currentValue, label: currentValue }];
+    }
+    return opts;
   }
 
   //#endregion
