@@ -1,0 +1,122 @@
+<div class="payroll-fields">
+  <div class="pay-field pay-field-basic">
+    <label class="pay-label"><i class="pi pi-wallet"></i><span>Basic Pay</span></label>
+    <p-inputNumber
+      [ngModel]="value().basicPay"
+      (ngModelChange)="update('basicPay', $event)"
+      mode="decimal"
+      [min]="0"
+      [minFractionDigits]="2"
+      [maxFractionDigits]="2"
+      placeholder="0.00"
+      styleClass="w-full"
+      inputStyleClass="w-full"
+    />
+  </div>
+
+  <div class="pay-field">
+    <label class="pay-label">
+      <i class="pi pi-percentage"></i><span>CPF</span>
+      <i class="pi pi-info-circle info-i" pTooltip="Turn on if CPF contributions apply to this staff." tooltipPosition="top"></i>
+    </label>
+    <p-selectButton
+      [options]="yesNo"
+      [ngModel]="value().cpfYN"
+      (ngModelChange)="update('cpfYN', $event)"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+    />
+  </div>
+
+  <div class="pay-field">
+    <label class="pay-label">
+      <i class="pi pi-clock"></i><span>Overtime</span>
+      <i class="pi pi-info-circle info-i" pTooltip="Payroll calculates overtime only for staff set to Yes." tooltipPosition="top"></i>
+    </label>
+    <p-selectButton
+      [options]="yesNo"
+      [ngModel]="value().otYN"
+      (ngModelChange)="update('otYN', $event)"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+    />
+  </div>
+
+  @if (value().otYN === 'Y') {
+    <div class="pay-field pay-field-wide">
+      <label class="pay-label">
+        <i class="pi pi-sun"></i><span>Default Shift</span>
+        <i class="pi pi-info-circle info-i" pTooltip="Used for overtime on a day with no Duty Roster entry for this staff. Leave blank to use the company's normal working hours." tooltipPosition="top"></i>
+      </label>
+      <p-select
+        [options]="shiftTypes()"
+        [ngModel]="value().shiftId"
+        (ngModelChange)="update('shiftId', $event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Use the company's normal hours"
+        [filter]="true"
+        filterPlaceholder="Search..."
+        [showClear]="true"
+        appendTo="body"
+        class="w-full"
+      />
+    </div>
+  }
+
+  <div class="pay-field">
+    <label class="pay-label">
+      <i class="pi pi-globe"></i><span>Foreign Worker Levy</span>
+      <i class="pi pi-info-circle info-i" pTooltip="Turn on for foreign workers who pay a levy. The levy tier comes from nationality and skill level." tooltipPosition="top"></i>
+    </label>
+    <p-selectButton
+      [options]="yesNo"
+      [ngModel]="value().levyYN"
+      (ngModelChange)="setLevy($event)"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+    />
+  </div>
+
+  @if (value().levyYN === 'Y') {
+    <div class="pay-group-title">Levy details</div>
+
+    <div class="pay-field pay-field-wide">
+      <label class="pay-label"><i class="pi pi-flag"></i><span>Nationality</span></label>
+      <p-select
+        [options]="nationalities()"
+        [ngModel]="value().nationalityId"
+        (ngModelChange)="update('nationalityId', $event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select nationality"
+        [filter]="true"
+        filterPlaceholder="Search..."
+        [showClear]="true"
+        [invalid]="!!errors().nationalityId"
+        appendTo="body"
+        class="w-full"
+      />
+      @if (errors().nationalityId) {
+        <small class="pay-error">{{ errors().nationalityId }}</small>
+      }
+    </div>
+
+    <div class="pay-field">
+      <label class="pay-label"><i class="pi pi-star"></i><span>Skill Level</span></label>
+      <p-selectButton
+        [options]="skillLevels"
+        [ngModel]="value().skillLevel"
+        (ngModelChange)="update('skillLevel', $event)"
+        optionLabel="label"
+        optionValue="value"
+      />
+      @if (errors().skillLevel) {
+        <small class="pay-error">{{ errors().skillLevel }}</small>
+      }
+    </div>
+  }
+</div>

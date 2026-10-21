@@ -14,6 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { FormsModule } from '@angular/forms';
+import {
+  ContactStaffPayrollComponent,
+  emptyStaffPayroll,
+  StaffPayroll,
+  StaffPayrollErrors,
+  staffPayrollErrors,
+} from '../contact-staff-payroll-component/contact-staff-payroll-component';
+
+type WizardStepKey = 'basic' | 'payroll' | 'security';
 
 @Component({
   selector: 'app-contact-staff-add',
@@ -29,6 +38,7 @@ import { FormsModule } from '@angular/forms';
     SelectButtonModule,
     FormsModule,
     FloatingActionBarComponent,
+    ContactStaffPayrollComponent,
   ],
   templateUrl: './contact-staff-add-component.html',
   styleUrls: ['./contact-staff-add-component.scss'],
@@ -47,19 +57,25 @@ export class ContactStaffAddComponent implements OnInit {
 
   //#region SIGNALS - UI STATE MANAGEMENT
 
-  // Wizard step tracking
+  // Wizard step tracking (1-based); the payroll step exists only when Payroll is subscribed
   wizardStep = signal<number>(1);
+  payrollEnabled = signal<boolean>(false);
+  nationalityOpts = signal<DropdownOption[]>([]);
+  shiftTypeOpts = signal<DropdownOption[]>([]);
+  payroll = signal<StaffPayroll>(emptyStaffPayroll());
+  payrollErrors = signal<StaffPayrollErrors>({});
+  steps = computed<WizardStepKey[]>(() =>
+    this.payrollEnabled() ? ['basic', 'payroll', 'security'] : ['basic', 'security'],
+  );
+  stepKey = computed<WizardStepKey>(() => this.steps()[this.wizardStep() - 1]);
   actionButtons = computed<ActionButton[]>(() => {
-    if (this.wizardStep() === 1) {
-      return [
-        { label: 'Cancel', icon: 'pi pi-times', action: 'cancel', severity: 'secondary', outlined: true },
-        { label: 'Next', icon: 'pi pi-arrow-right', action: 'next', severity: 'primary' },
-      ];
-    }
-    return [
-      { label: 'Back', icon: 'pi pi-arrow-left', action: 'back', severity: 'secondary', outlined: true },
-      { label: 'Create', icon: 'pi pi-check', action: 'save', severity: 'primary' },
-    ];
+    const first: ActionButton = this.wizardStep() === 1
+      ? { label: 'Cancel', icon: 'pi pi-times', action: 'cancel', severity: 'secondary', outlined: true }
+      : { label: 'Back', icon: 'pi pi-arrow-left', action: 'back', severity: 'secondary', outlined: true };
+    const last: ActionButton = this.wizardStep() === this.steps().length
+      ? { label: 'Create', icon: 'pi pi-check', action: 'save', severity: 'primary' }
+      : { label: 'Next', icon: 'pi pi-arrow-right', action: 'next', severity: 'primary' };
+    return [first, last];
   });
 
   // Dropdown options
@@ -227,10 +243,25 @@ export class ContactStaffAddComponent implements OnInit {
     this.staffService.getGroupAuthorities().subscribe({
       next: (data) => {
         this.groupAuthorityOpts.set(data);
-        this.loadingState.set(LoadingState.Success);
+        this.loadPayrollOptions();
       },
       error: () => {
         this.groupAuthorityOpts.set([]);
+        this.loadPayrollOptions();
+      }
+    });
+  }
+
+  private loadPayrollOptions(): void {
+    this.staffService.getPayrollOptions().subscribe({
+      next: (options) => {
+        this.payrollEnabled.set(options.subscribed);
+        this.nationalityOpts.set(options.nationalities ?? []);
+        this.shiftTypeOpts.set(options.shiftTypes ?? []);
+        this.loadingState.set(LoadingState.Success);
+      },
+      error: () => {
+        this.payrollEnabled.set(false);
         this.loadingState.set(LoadingState.Success);
       }
     });
@@ -322,15 +353,9 @@ export class ContactStaffAddComponent implements OnInit {
       return;
     }
 
-    // Save step 1 model and advance to step 2
+    // Save step 1 model and advance
     this.stepOneModel = model;
-
-    if (this.systemUser() === 'Y' && !this.loginIdAutoFilled) {
-      this.loginId.set(model['staffId'] || '');
-      this.loginIdAutoFilled = true;
-    }
-
-    this.wizardStep.set(2);
+    this.goToStep(2);
   }
 
   //#endregion
@@ -338,10 +363,40 @@ export class ContactStaffAddComponent implements OnInit {
   //#region WIZARD NAVIGATION
 
   onNext(): void {
-    this.triggerSubmit.set(true);
+    if (this.stepKey() === 'basic') {
+      this.triggerSubmit.set(true);
+      return;
+    }
+    if (this.stepKey() === 'payroll' && !this.payrollValid()) {
+      return;
+    }
+    this.goToStep(this.wizardStep() + 1);
+  }
+
+  private payrollValid(): boolean {
+    const errors = staffPayrollErrors(this.payroll());
+    this.payrollErrors.set(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  private goToStep(step: number): void {
+    this.wizardStep.set(step);
+    const reachedSecurity = this.steps()[step - 1] === 'security';
+    if (reachedSecurity && this.systemUser() === 'Y' && !this.loginIdAutoFilled) {
+      this.loginId.set(this.stepOneModel['staffId'] || '');
+      this.loginIdAutoFilled = true;
+    }
   }
 
   wizardBack(): void {
+    if (this.wizardStep() > 2) {
+      this.wizardStep.update((step) => step - 1);
+      return;
+    }
+    this.returnToFirstStep();
+  }
+
+  private returnToFirstStep(): void {
     this.loginIdAutoFilled = false;
     this.formConfigSignal.update((cfg) => ({
       ...cfg,
@@ -364,7 +419,7 @@ export class ContactStaffAddComponent implements OnInit {
           'Validation',
           'Email is required when System User is set to Yes.'
         );
-        this.wizardBack();
+        this.returnToFirstStep();
         return;
       }
     }
@@ -417,11 +472,7 @@ export class ContactStaffAddComponent implements OnInit {
     this.saving.set(true);
 
     this.staffService.createStaff(payload).subscribe({
-      next: () => {
-        this.messageService.showSuccess('Success', 'Staff created successfully!');
-        this.saving.set(false);
-        this.router.navigate(['/contact/staff/']);
-      },
+      next: () => this.savePayrollThenLeave(payload['staffId']),
       error: (err) => {
         this.messageService.showError(
           'Error',
@@ -429,6 +480,35 @@ export class ContactStaffAddComponent implements OnInit {
         this.saving.set(false);
       }
     });
+  }
+
+  /** A payroll row is saved only when something was entered, so untouched staff stay "not set up". */
+  private payrollEntered(): boolean {
+    return this.payrollEnabled() && JSON.stringify(this.payroll()) !== JSON.stringify(emptyStaffPayroll());
+  }
+
+  private savePayrollThenLeave(staffId: string): void {
+    if (!this.payrollEntered()) {
+      this.finishCreate();
+      return;
+    }
+    this.staffService.saveStaffPayroll(staffId, this.payroll()).subscribe({
+      next: () => this.finishCreate(),
+      error: (err) => {
+        this.messageService.showWarn(
+          'Payroll setting not saved',
+          err.error?.message || 'The staff was created, but the payroll setting could not be saved. Edit the staff to retry.');
+        this.finishCreate(false);
+      }
+    });
+  }
+
+  private finishCreate(announce = true): void {
+    if (announce) {
+      this.messageService.showSuccess('Success', 'Staff created successfully!');
+    }
+    this.saving.set(false);
+    this.router.navigate(['/contact/staff/']);
   }
 
   private buildMergedPayload(): Record<string, any> {

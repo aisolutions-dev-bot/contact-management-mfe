@@ -10,7 +10,7 @@
     <div class="error-state">
       <i class="pi pi-exclamation-triangle"></i>
       <span>Failed to load staff record.</span>
-      <p-button label="Back" icon="pi pi-arrow-left" (onClick)="goBack()" severity="secondary" [outlined]="true" />
+      <p-button label="Back" icon="pi pi-arrow-left" (onClick)="goBack()" severity="secondary" />
     </div>
   }
 
@@ -18,7 +18,7 @@
 
     <!-- Toolbar -->
     <div class="detail-toolbar">
-      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" (onClick)="goBack()" />
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" (onClick)="goBack()" />
       <div class="toolbar-right">
         @if (s.systemUser === 'Y' && s.tokenActivated !== 'Y') {
           <p-button
@@ -36,23 +36,30 @@
       </div>
     </div>
 
-    <!-- Main Card -->
-    <p-card styleClass="detail-card">
+    <!-- Staff Details -->
+    <p-panel
+      styleClass="detail-panel"
+      toggler="header"
+      transitionOptions="0ms"
+      [toggleable]="true"
+      [collapsed]="!isOpen('details')"
+      (collapsedChange)="setOpen('details', !$event)"
+    >
       <ng-template pTemplate="header">
-        <div class="card-header-bar">
-          <div class="card-title">
-            <i class="pi pi-user"></i>
-            <span><strong>{{ s.staffId }}</strong> — {{ s.staffName }}</span>
-          </div>
+        <span class="panel-title">
+          <i class="pi pi-id-card"></i> Staff Details
           <p-tag
+            class="panel-status"
             [value]="STATUS_TAG[s.status]?.label || s.status"
             [severity]="STATUS_TAG[s.status]?.severity"
           />
-        </div>
+        </span>
+      </ng-template>
+      <ng-template #headericons let-collapsed>
+        <i class="pi pi-chevron-down panel-chevron" [class.collapsed]="collapsed"></i>
       </ng-template>
 
-      <!-- Personal Information -->
-      <div class="section-title"><i class="pi pi-id-card"></i> Personal Information</div>
+      <div class="section-title"><i class="pi pi-user"></i> Personal Information</div>
       <div class="detail-grid">
         <div class="detail-field"><span class="label">Staff ID</span><span class="value">{{ s.staffId }}</span></div>
         <div class="detail-field"><span class="label">Full Name</span><span class="value">{{ s.staffName }}</span></div>
@@ -63,31 +70,78 @@
 
       <p-divider />
 
-      <!-- Employment -->
       <div class="section-title"><i class="pi pi-briefcase"></i> Employment</div>
       <div class="detail-grid">
         <div class="detail-field"><span class="label">Department</span><span class="value">{{ s.departmentId || '—' }}</span></div>
         <div class="detail-field"><span class="label">Join Date</span><span class="value">{{ fmtDate(s.dateJoin) }}</span></div>
-        <div class="detail-field"><span class="label">Status</span>
-          <span class="value">
-            <p-tag [value]="STATUS_TAG[s.status]?.label || s.status" [severity]="STATUS_TAG[s.status]?.severity" />
-          </span>
-        </div>
       </div>
 
       <p-divider />
 
-      <!-- Professional Info -->
       <div class="section-title"><i class="pi pi-file"></i> Professional Info</div>
       <div class="detail-grid">
         <div class="detail-field"><span class="label">Form Type</span><span class="value">{{ s.formType || '—' }}</span></div>
         <div class="detail-field"><span class="label">Skill Set</span><span class="value">{{ s.skillSet || '—' }}</span></div>
       </div>
+    </p-panel>
 
-      <p-divider />
+    <!-- Payroll Setting (Payroll subscribers only) -->
+    @if (payrollEnabled()) {
+      <div id="payroll-section">
+        <p-panel
+          styleClass="detail-panel"
+          toggler="header"
+          transitionOptions="0ms"
+          [toggleable]="true"
+          [collapsed]="!isOpen('payroll')"
+          (collapsedChange)="setOpen('payroll', !$event)"
+        >
+          <ng-template pTemplate="header">
+            <span class="panel-title"><i class="pi pi-wallet"></i> Payroll Setting</span>
+          </ng-template>
+          <ng-template #headericons let-collapsed>
+            <i class="pi pi-chevron-down panel-chevron" [class.collapsed]="collapsed"></i>
+          </ng-template>
 
-      <!-- Security -->
-      <div class="section-title"><i class="pi pi-shield"></i> Security</div>
+          @if (payroll(); as p) {
+            <div class="detail-grid">
+              <div class="detail-field"><span class="label">Basic Pay</span><span class="value">{{ p.basicPay | number: '1.2-2' }}</span></div>
+              <div class="detail-field"><span class="label">CPF</span><span class="value">{{ yesNo(p.cpfYN) }}</span></div>
+              <div class="detail-field"><span class="label">Overtime</span><span class="value">{{ yesNo(p.otYN) }}</span></div>
+              @if (p.otYN === 'Y') {
+                <div class="detail-field"><span class="label">Default Shift</span><span class="value">{{ shiftName(p.shiftId) }}</span></div>
+              }
+              <div class="detail-field"><span class="label">Foreign Worker Levy</span><span class="value">{{ yesNo(p.levyYN) }}</span></div>
+              @if (p.levyYN === 'Y') {
+                <div class="detail-field"><span class="label">Nationality</span><span class="value">{{ nationalityName(p.nationalityId) }}</span></div>
+                <div class="detail-field"><span class="label">Skill Level</span><span class="value">{{ p.skillLevel || '—' }}</span></div>
+              }
+            </div>
+          } @else {
+            <div class="detail-grid">
+              <div class="detail-field"><span class="value">Not set up yet.</span></div>
+            </div>
+          }
+        </p-panel>
+      </div>
+    }
+
+    <!-- Security -->
+    <p-panel
+      styleClass="detail-panel"
+      toggler="header"
+      transitionOptions="0ms"
+      [toggleable]="true"
+      [collapsed]="!isOpen('security')"
+      (collapsedChange)="setOpen('security', !$event)"
+    >
+      <ng-template pTemplate="header">
+        <span class="panel-title"><i class="pi pi-shield"></i> Security</span>
+      </ng-template>
+      <ng-template #headericons let-collapsed>
+        <i class="pi pi-chevron-down panel-chevron" [class.collapsed]="collapsed"></i>
+      </ng-template>
+
       <div class="detail-grid">
         <div class="detail-field">
           <span class="label">System User</span>
@@ -114,8 +168,7 @@
           </div>
         }
       </div>
-
-    </p-card>
+    </p-panel>
 
     <!-- Audit trail -->
     <p-card styleClass="detail-card audit-card">

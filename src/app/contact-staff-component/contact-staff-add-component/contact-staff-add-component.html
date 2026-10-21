@@ -9,7 +9,7 @@
 
   <div class="page-toolbar">
     <div class="toolbar-left">
-      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" [outlined]="true" routerLink="/contact/staff" />
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" routerLink="/contact/staff" />
       <h2 class="page-title"><i class="pi pi-user-plus"></i> New Staff</h2>
     </div>
   </div>
@@ -22,19 +22,21 @@
 
     <!-- Wizard Header -->
     <div class="wizard-header">
-      <span class="wizard-step-label">STEP {{ wizardStep() }} OF 2</span>
+      <span class="wizard-step-label">STEP {{ wizardStep() }} OF {{ steps().length }}</span>
       <h2 class="wizard-title">
-        @if (wizardStep() === 1) { Basic Details }
-        @if (wizardStep() === 2) { Security Features }
+        @if (stepKey() === 'basic') { Basic Details }
+        @if (stepKey() === 'payroll') { Payroll Setting }
+        @if (stepKey() === 'security') { Security Features }
       </h2>
       <div class="wizard-progress">
-        <div class="wizard-progress-step" [class.active]="wizardStep() >= 1"></div>
-        <div class="wizard-progress-step" [class.active]="wizardStep() >= 2"></div>
+        @for (s of steps(); track s; let i = $index) {
+          <div class="wizard-progress-step" [class.active]="wizardStep() >= i + 1"></div>
+        }
       </div>
     </div>
 
     <!-- Step 1: Basic Details -->
-    @if (wizardStep() === 1) {
+    @if (stepKey() === 'basic') {
       <p-card styleClass="form-card">
         <ng-template pTemplate="header">
           <div class="card-header-bar">
@@ -61,8 +63,31 @@
       </p-card>
     }
 
-    <!-- Step 2: Security Features -->
-    @if (wizardStep() === 2) {
+    <!-- Step 2: Payroll Setting (Payroll subscribers only) -->
+    @if (stepKey() === 'payroll') {
+      <p-card styleClass="form-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-bar">
+            <div class="card-title">
+              <i class="pi pi-wallet"></i>
+              <span>Payroll Details</span>
+            </div>
+          </div>
+        </ng-template>
+        <div class="form-section">
+          <app-contact-staff-payroll
+            [(value)]="payroll"
+            [nationalities]="nationalityOpts()"
+            [shiftTypes]="shiftTypeOpts()"
+            [errors]="payrollErrors()"
+            (valueChange)="payrollErrors.set({})"
+          />
+        </div>
+      </p-card>
+    }
+
+    <!-- Security Features -->
+    @if (stepKey() === 'security') {
       <p-card styleClass="form-card">
         <ng-template pTemplate="header">
           <div class="card-header-bar">

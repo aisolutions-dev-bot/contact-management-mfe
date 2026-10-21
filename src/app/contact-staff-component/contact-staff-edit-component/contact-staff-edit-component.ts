@@ -10,6 +10,13 @@ import { ContactStaffService } from '../services/contact-staff-service';
 import { Validators } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ActionButton, FloatingActionBarComponent } from '../../components/floating-action-bar/floating-action-bar-component';
+import {
+  ContactStaffPayrollComponent,
+  emptyStaffPayroll,
+  StaffPayroll,
+  StaffPayrollErrors,
+  staffPayrollErrors,
+} from '../contact-staff-payroll-component/contact-staff-payroll-component';
 
 @Component({
   selector: 'app-contact-staff-edit',
@@ -20,7 +27,8 @@ import { ActionButton, FloatingActionBarComponent } from '../../components/float
     ButtonModule,
     CardModule,
     RouterLink,
-    FloatingActionBarComponent
+    FloatingActionBarComponent,
+    ContactStaffPayrollComponent
   ],
   templateUrl: './contact-staff-edit-component.html',
   styleUrls: ['./contact-staff-edit-component.scss'],
@@ -50,6 +58,14 @@ export class ContactStaffEditComponent implements OnInit {
 
   // Configuration & Environment
   uiMfeUrl = environment.uiMfeUrl;
+
+  // Payroll section, shown only when the Payroll module is subscribed
+  payrollEnabled = signal<boolean>(false);
+  nationalityOpts = signal<DropdownOption[]>([]);
+  shiftTypeOpts = signal<DropdownOption[]>([]);
+  payroll = signal<StaffPayroll>(emptyStaffPayroll());
+  payrollErrors = signal<StaffPayrollErrors>({});
+  private loadedPayroll = JSON.stringify(emptyStaffPayroll());
 
   // Floating action bar buttons
   actionButtons: ActionButton[] = [
@@ -155,7 +171,7 @@ export class ContactStaffEditComponent implements OnInit {
   ];
 
   private formConfigSignal = signal<FormConfig>({
-    title: 'Edit Staff',
+    title: '',
     layout: 'grid',
     gridColumns: 6,
     fields: this.formFields,
@@ -210,12 +226,37 @@ export class ContactStaffEditComponent implements OnInit {
     this.staffService.getStaffById(id).subscribe({
       next: (staff) => {
         this.handleStaffLoaded(staff);
+        this.loadPayrollSection(staff['staffId']);
       },
       error: (err) => {
         this.messageService.showError('Error', 'Failed to load staff data', err);
         this.router.navigate(['/contact/staff']);
       }
     });
+  }
+
+  /** Loads the payroll section; it stays hidden unless Payroll is subscribed. */
+  private loadPayrollSection(staffId: string): void {
+    this.staffService.getPayrollOptions().subscribe({
+      next: (options) => {
+        if (!options.subscribed) return;
+        this.nationalityOpts.set(options.nationalities ?? []);
+        this.shiftTypeOpts.set(options.shiftTypes ?? []);
+        this.staffService.getStaffPayroll(staffId).subscribe({
+          next: (saved) => {
+            this.payroll.set(saved ?? emptyStaffPayroll());
+            this.loadedPayroll = JSON.stringify(this.payroll());
+            this.payrollEnabled.set(true);
+          },
+          error: () => this.messageService.showError('Error', 'Failed to load the payroll setting'),
+        });
+      },
+      error: () => this.payrollEnabled.set(false),
+    });
+  }
+
+  private payrollChanged(): boolean {
+    return this.payrollEnabled() && JSON.stringify(this.payroll()) !== this.loadedPayroll;
   }
 
   private handleStaffLoaded(staff: Record<string, any>): void {
@@ -237,7 +278,6 @@ export class ContactStaffEditComponent implements OnInit {
   private initializeFormWithData(staff: Record<string, any>): void {
     this.formConfigSignal.update((cfg) => ({
       ...cfg,
-      title: `Edit Staff: ${staff['staffName'] || ''}`,
       model: {
         staffId: staff['staffId'] ?? null,
         staffName: staff['staffName'] ?? null,
@@ -370,12 +410,21 @@ export class ContactStaffEditComponent implements OnInit {
 
   onSave(): void {
     // Check if form has data
-    if (Object.keys(this.currentFormModel).length === 0) {
+    if (Object.keys(this.currentFormModel).length === 0 && !this.payrollChanged()) {
       this.messageService.showInfo(
         'No Changes',
         'There are no changes to save'
       );
       return;
+    }
+
+    if (this.payrollChanged()) {
+      const errors = staffPayrollErrors(this.payroll());
+      this.payrollErrors.set(errors);
+      if (Object.keys(errors).length > 0) {
+        this.messageService.showWarn('Validation', 'Please complete the levy details');
+        return;
+      }
     }
 
     // Trigger form validation and submission
@@ -426,11 +475,7 @@ export class ContactStaffEditComponent implements OnInit {
     const payload = this.buildPayload(model);
 
     this.staffService.updateStaff(id, payload).subscribe({
-      next: () => {
-        this.messageService.showSuccess('Success', 'Staff updated successfully!');
-        this.saving.set(false);
-        this.router.navigate(['/contact/staff/']);
-      },
+      next: () => this.savePayrollThenLeave(payload['staffId']),
       error: (err) => {
         this.messageService.showError(
           'Error',
@@ -438,6 +483,30 @@ export class ContactStaffEditComponent implements OnInit {
         this.saving.set(false);
       }
     });
+  }
+
+  private savePayrollThenLeave(staffId: string): void {
+    if (!this.payrollChanged()) {
+      this.finishUpdate(true);
+      return;
+    }
+    this.staffService.saveStaffPayroll(staffId, this.payroll()).subscribe({
+      next: () => this.finishUpdate(true),
+      error: (err) => {
+        this.messageService.showError(
+          'Payroll setting not saved',
+          err.error?.message || 'The staff was updated, but the payroll setting could not be saved. Please try again.');
+        this.saving.set(false);
+      }
+    });
+  }
+
+  private finishUpdate(announce: boolean): void {
+    if (announce) {
+      this.messageService.showSuccess('Success', 'Staff updated successfully!');
+    }
+    this.saving.set(false);
+    this.router.navigate(['/contact/staff/']);
   }
 
   private buildPayload(model: Record<string, any>): Record<string, any> {

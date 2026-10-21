@@ -8,6 +8,7 @@ import {
   ImportStaffRow,
   DropdownOption,
 } from '../../models/contact';
+import { StaffPayroll } from '../contact-staff-payroll-component/contact-staff-payroll-component';
 
 interface ContactStaffListResponse {
   data: ContactStaffList[];
@@ -95,6 +96,27 @@ export class ContactStaffService {
     getGroupAuthorities(): Observable<DropdownOption[]> {
         const systemApiUrl = environment.systemApiUrl;
         return this.http.get<DropdownOption[]>(`${systemApiUrl}/v1/dropdowns/group-authorities`);
+    }
+
+    /** Whether Payroll is subscribed (the staff payroll section is hidden when not), plus its dropdowns. */
+    getPayrollOptions(): Observable<{ subscribed: boolean; nationalities: DropdownOption[]; shiftTypes: DropdownOption[] }> {
+        return this.http.get<{ subscribed: boolean; nationalities: DropdownOption[]; shiftTypes: DropdownOption[] }>(
+            `${this.apiUrl}/v1/staff-payroll/options`
+        );
+    }
+
+    /** The staff's saved payroll setting; null when none has been saved. */
+    getStaffPayroll(staffId: string): Observable<StaffPayroll | null> {
+        return this.http.get<StaffPayroll | null>(
+            `${this.apiUrl}/v1/staff-payroll/${encodeURIComponent(staffId)}`
+        );
+    }
+
+    saveStaffPayroll(staffId: string, payroll: StaffPayroll): Observable<StaffPayroll> {
+        return this.http.put<StaffPayroll>(
+            `${this.apiUrl}/v1/staff-payroll/${encodeURIComponent(staffId)}`,
+            payroll
+        );
     }
 
     resendActivation(id: number): Observable<any> {

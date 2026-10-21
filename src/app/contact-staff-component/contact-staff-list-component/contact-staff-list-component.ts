@@ -65,6 +65,9 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
     staffs = signal<ContactStaffList[]>([]);
     selectedRowData = signal<ContactStaffList | null>(null);
 
+    // The Payroll shortcut shows only when the Payroll module is subscribed
+    payrollEnabled = signal<boolean>(false);
+
     // Status change dialog
     showStatusDialog = signal<boolean>(false);
     statusDialogStaff = signal<ContactStaffList | null>(null);
@@ -104,6 +107,14 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
 
         const items: any[] = [];
 
+        if (this.payrollEnabled()) {
+            items.push({
+                label: 'Payroll',
+                icon: 'pi pi-fw pi-wallet',
+                command: () => this.navigateToPayroll(selected),
+            });
+        }
+
         if (this.canSecurity) {
             items.push({
                 label: 'Security',
@@ -130,6 +141,10 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
 
     ngOnInit() {
        this.load();
+       this.staffService.getPayrollOptions().subscribe({
+           next: (options) => this.payrollEnabled.set(options.subscribed),
+           error: () => this.payrollEnabled.set(false),
+       });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -194,6 +209,10 @@ export class ContactStaffListComponent implements OnInit, OnChanges {
 
     navigateToStaffView(staff: ContactStaffList): void {
         this.router.navigate(['/contact/staff/view', staff.uniqId]);
+    }
+
+    navigateToPayroll(staff: ContactStaffList): void {
+        this.router.navigate(['/contact/staff/view', staff.uniqId], { queryParams: { section: 'payroll' } });
     }
 
     navigateToStaffEdit(staff: ContactStaffList | null): void {
